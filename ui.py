@@ -113,6 +113,8 @@ class Programmer(QMainWindow):
             self.port_selector.setCurrentIndex(
                 self.serial_ports.index(self.port)
             )
+        else:
+            self.port_selector.setCurrentIndex(-1)
 
     def changePort(self, newPort):
         if newPort != self.port:
