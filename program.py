@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import serial
 import time
+import glob
 import sys
 import os
 
@@ -11,6 +12,37 @@ from multiprocessing import Process, Queue
 from tqdm import tqdm
 
 from packet import Packet, Header
+
+# baudrate for lpc21isp: 38400
+# baudrate for mx2+ FW:  115200
+
+def serial_ports():
+    """ Lists serial port names
+
+        :raises EnvironmentError:
+            On unsupported or unknown platforms
+        :returns:
+            A list of the serial ports available on the system
+    """
+    if sys.platform.startswith('win'):
+        ports = ['COM%s' % (i + 1) for i in range(256)]
+    elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+        # this excludes your current terminal "/dev/tty"
+        ports = glob.glob('/dev/tty[A-Za-z]*')
+    elif sys.platform.startswith('darwin'):
+        ports = glob.glob('/dev/tty.*')
+    else:
+        raise EnvironmentError('Unsupported platform')
+
+    result = []
+    for port in ports:
+        try:
+            s = serial.Serial(port)
+            s.close()
+            result.append(port)
+        except (OSError, serial.SerialException):
+            pass
+    return result
 
 def main():
     # TODO: replace these with config options in GUI
@@ -25,20 +57,24 @@ def main():
     bytesize      = serial.EIGHTBITS
     parity        = serial.PARITY_NONE
 
+    # have ui which contains
+    # * selector for COM Port
+    # * button for starting process
+    # * display of lpc21isp output
+    # * progress display
+    # * alert display
+
     try:
         f = open(filename, 'rb')
     except Exception as error:
-        print "ERROR: Couldn't open file {}".format(filename)
+        print("ERROR: Couldn't open file {}".format(filename))
         return -1
     else:
         with f:
             fileData = bytearray(f.read())
 
     fileSize = os.path.getsize(filename)
-    print 'Size:     {}'.format(fileSize)
-    print 'Version:  {:02x}'.format(version)
     fwCheckSum = checkSum(fileData, fileSize, 0xFFFFFFFF)
-    print 'CheckSum: {:02x}'.format(fwCheckSum)
 
     try:
         ser = serial.Serial(port=port,
@@ -48,7 +84,7 @@ def main():
                             stopbits=stopbits,
                             timeout=timeout)
     except Exception as error:
-        print "ERROR: Couldn't open serial port {}".format(port)
+        print("ERROR: Couldn't open serial port {}".format(port))
         return -1
     else:
         with ser:
@@ -62,7 +98,7 @@ def main():
                 # receive ota ready
                 resp = bytearray(ser.read(otaReadyLength))
                 if not checkOTAReady(resp):
-                    print 'No "OTA Ready" received.'
+                    pass
                 else:
                     haveRecvReady = True
 
