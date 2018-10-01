@@ -2,8 +2,8 @@ import glob
 import sys
 import serial
 from PyQt5 import QtGui
-from PyQt5.QtWidgets import (QWidget, QProgressBar, QPushButton, QLabel, QCheckBox, QComboBox, QApplication, QMainWindow, QStyleFactory, QDesktopWidget, QMessageBox)
-from PyQt5.QtCore import QBasicTimer
+from PyQt5.QtWidgets import (QWidget, QProgressBar, QPushButton, QLabel, QCheckBox, QComboBox, QApplication, QMainWindow, QStyleFactory, QDesktopWidget, QMessageBox, QVBoxLayout, QHBoxLayout, QSplitter)
+from PyQt5.QtCore import QBasicTimer, Qt
 
 import resource
 from smartdrive import SmartDrive
@@ -91,15 +91,21 @@ class Programmer(QMainWindow):
         self.toolbar_add_action('toolbar1', refreshAction)
 
         self.pbar = QProgressBar(self)
-        self.pbar.setGeometry(30, 40, 200, 25)
+        self.pbar.setGeometry(0,0,100, 10)
 
         self.btn = QPushButton('Start', self)
-        self.btn.move(40, 80)
         self.btn.clicked.connect(self.start)
 
         self.timer = QBasicTimer()
         self.step = 0
 
+        self.mainWidget = QWidget()
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(self.pbar)
+        self.layout.addWidget(self.btn)
+        self.mainWidget.setLayout(self.layout)
+
+        self.setCentralWidget(self.mainWidget)
         self.center()
         self.show()
 
