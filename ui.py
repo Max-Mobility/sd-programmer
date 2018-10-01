@@ -5,6 +5,7 @@ from PyQt5 import QtGui
 from PyQt5.QtWidgets import (QWidget, QProgressBar, QPushButton, QLabel, QCheckBox, QComboBox, QApplication, QMainWindow, QStyleFactory, QDesktopWidget, QMessageBox)
 from PyQt5.QtCore import QBasicTimer
 
+import resource
 from smartdrive import SmartDrive
 
 from action import\
@@ -54,14 +55,12 @@ class Programmer(QMainWindow):
         self.setWindowTitle('Programmer')
 
         # Create the actions for the program
-        exitAction = Action('icons/toolbar/exit.png', 'Exit', self)
+        exitAction = Action(resource.path('icons/toolbar/exit.png'), 'Exit', self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.setStatusTip('Exit application')
-        # add refresh action!
-        # note that this will call closeEvent
         exitAction.triggered.connect(self.close)
 
-        refreshAction = Action('icons/toolbar/refresh.png', 'Refresh', self)
+        refreshAction = Action(resource.path('icons/toolbar/refresh.png'), 'Refresh', self)
         refreshAction.setShortcut('Ctrl+R')
         refreshAction.setStatusTip('Refresh Serial Port List')
         refreshAction.triggered.connect(self.refreshPorts)
@@ -82,7 +81,7 @@ class Programmer(QMainWindow):
         self.menubar_init()
         self.menubar_add_menu('&File')
         self.menu_add_action('&File', exitAction)
-        self.menu_add_action('&Refresh Serial Ports', refreshAction)
+        self.menu_add_action('&File', refreshAction)
 
         # Set up the toolbars for the program
         self.toolbar_init()
