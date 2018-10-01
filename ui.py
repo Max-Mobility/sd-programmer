@@ -1,11 +1,16 @@
 import glob
 import sys
 import serial
-from PyQt5.QtWidgets import (QWidget, QLabel, QComboBox)
+from PyQt5 import QtGui
+from PyQt5.QtWidgets import (QWidget, QProgressBar, QPushButton, QLabel, QCheckBox, QComboBox, QApplication, QMainWindow, QStyleFactory, QDesktopWidget, QMessageBox)
+from PyQt5.QtCore import QBasicTimer
 
 from smartdrive import SmartDrive
 
-def serial_ports():
+from action import\
+    Action
+
+def listSerialPorts():
     """ Lists serial port names
 
         :raises EnvironmentError:
@@ -33,29 +38,137 @@ def serial_ports():
             pass
     return result
 
-class Programmer(QWidget):
+class Programmer(QMainWindow):
     def __init__(self):
         super().__init__()
         self.initUI()
 
     def initUI(self):
+        QApplication.setStyle(QStyleFactory.create('Cleanlooks'))
+        self.setStyleSheet('''QToolTip {
+                           background-color: black;
+                           color: white;
+                           border: black solid 1px
+                           }''')
+        self.setGeometry(300, 300, 800, 600)
+        self.setWindowTitle('Programmer')
 
-        self.lbl = QLabel("Selected Port:", self)
+        # Create the actions for the program
+        exitAction = Action('icons/toolbar/exit.png', 'Exit', self)
+        exitAction.setShortcut('Ctrl+Q')
+        exitAction.setStatusTip('Exit application')
+        # add refresh action!
+        # note that this will call closeEvent
+        exitAction.triggered.connect(self.close)
 
-        combo = QComboBox(self)
-        ports = serial_ports()
-        for port in ports:
-            combo.addItem(port)
+        refreshAction = Action('icons/toolbar/refresh.png', 'Refresh', self)
+        refreshAction.setShortcut('Ctrl+R')
+        refreshAction.setStatusTip('Refresh Serial Port List')
+        refreshAction.triggered.connect(self.refreshPorts)
 
-        combo.move(50, 50)
-        self.lbl.move(50, 150)
+        # Create the widgets for the program (embeddable in the
+        # toolbar or elsewhere)
+        self.port = None
+        self.port_selector = QComboBox(self)
+        self.refreshPorts()
+        self.port = self.serial_ports[0]
+        self.port_selector.addItems(self.serial_ports)
+        self.port_selector.setCurrentIndex(
+            self.serial_ports.index(self.port)
+        )
+        self.port_selector.activated[str].connect(self.changePort)
 
-        combo.activated[str].connect(self.onActivated)
+        # Set up the Menus for the program
+        self.menubar_init()
+        self.menubar_add_menu('&File')
+        self.menu_add_action('&File', exitAction)
+        self.menu_add_action('&Refresh Serial Ports', refreshAction)
 
-        self.setGeometry(300, 300, 300, 200)
-        self.setWindowTitle('QComboBox')
+        # Set up the toolbars for the program
+        self.toolbar_init()
+        self.toolbar_create('toolbar1')
+        self.toolbar_add_action('toolbar1', exitAction)
+        self.toolbar_add_widget('toolbar1', self.port_selector)
+        self.toolbar_add_action('toolbar1', refreshAction)
+
+        self.pbar = QProgressBar(self)
+        self.pbar.setGeometry(30, 40, 200, 25)
+
+        self.btn = QPushButton('Start', self)
+        self.btn.move(40, 80)
+        self.btn.clicked.connect(self.start)
+
+        self.timer = QBasicTimer()
+        self.step = 0
+
+        self.center()
         self.show()
 
-    def onActivated(self, text):
-        self.lbl.setText('Selected Port: {}'.format(text))
-        self.lbl.adjustSize()
+    def refreshPorts(self):
+        print("Refreshing serial ports")
+        self.serial_ports = listSerialPorts()
+        self.port_selector.clear()
+        self.port_selector.addItems(self.serial_ports)
+        if self.port is not None and self.port in self.serial_ports:
+            self.port_selector.setCurrentIndex(
+                self.serial_ports.index(self.port)
+            )
+
+    def changePort(self, newPort):
+        if newPort != self.port:
+            print("Changing from {} to {}".format(self.port, newPort))
+            self.port = newPort
+
+    def timerEvent(self, e):
+        if self.step >= 100:
+            self.timer.stop()
+            self.btn.setText('Finished')
+            return
+        self.step = self.step + 1
+        self.pbar.setValue(self.step)
+
+    def start(self):
+        if self.timer.isActive():
+            self.timer.stop()
+            self.btn.setText('Start')
+        else:
+            self.timer.start(100, self)
+            self.btn.setText('Stop')
+
+    def center(self):
+        qr = self.frameGeometry()
+        cp = QDesktopWidget().availableGeometry().center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
+
+    def closeEvent(self, event):
+        reply = QMessageBox.question(
+            self, 'Quit',
+            'Sure you want to quit?', QMessageBox.Yes |
+            QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            event.accept()
+        else:
+            event.ignore()
+
+    from menubar import \
+        menubar_init, \
+        menubar_add_menu, \
+        menu_add_action
+
+    from toolbar import \
+        toolbar_init, \
+        toolbar_create, \
+        toolbar_add_action, \
+        toolbar_add_widget, \
+        toolbar_remove
+
+    from action import \
+        action_init, \
+        action_create
+
+    from context_menu import \
+        context_menu_init, \
+        context_menu_create, \
+        context_menu_add_action
