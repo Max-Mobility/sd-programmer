@@ -70,11 +70,6 @@ class Programmer(QMainWindow):
         self.port = None
         self.port_selector = QComboBox(self)
         self.refreshPorts()
-        self.port = self.serial_ports[0]
-        self.port_selector.addItems(self.serial_ports)
-        self.port_selector.setCurrentIndex(
-            self.serial_ports.index(self.port)
-        )
         self.port_selector.activated[str].connect(self.changePort)
 
         # Set up the Menus for the program
