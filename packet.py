@@ -46,14 +46,14 @@ class Packet:
     def __str__(self):
         return ' '.join('{:02x}'.format(x) for x in self.data)
 
-    def isValid(self):
+    def isValid(self, Type=None, SubType=None):
         if self.data is None or len(self.data) < self.minPacketLength:
             return False
         payloadLen = (len(self.data) - self.minPacketLength)
         crc = checkSum(self.data[3:(3+payloadLen)])
         if (self.data[0] != 0xFE or
-            self.data[1] != Type or
-            self.data[2] != SubType or
+            (Type is not None and self.data[1] != Type) or
+            (SubType is not None and self.data[2] != SubType) or
             self.data[-3] != payloadLen or
             self.data[-2] != crc or
             self.data[-1] != 0xEF):

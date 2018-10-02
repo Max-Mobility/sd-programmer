@@ -2,7 +2,7 @@ import glob
 import sys
 import serial
 from PyQt5 import QtGui
-from PyQt5.QtWidgets import (QWidget, QProgressBar, QPushButton, QLabel, QCheckBox, QComboBox, QApplication, QMainWindow, QStyleFactory, QTextEdit, QDesktopWidget, QMessageBox, QVBoxLayout, QHBoxLayout, QSplitter)
+from PyQt5.QtWidgets import (QWidget, QProgressBar, QPushButton, QLabel, QCheckBox, QComboBox, QApplication, QMainWindow, QStyleFactory, QTextEdit, QDesktopWidget, QMessageBox, QErrorMessage, QVBoxLayout, QHBoxLayout, QSplitter)
 from PyQt5.QtCore import QProcess, QBasicTimer, Qt, QObject, QRunnable, QThread, QThreadPool, pyqtSignal
 
 import resource
@@ -180,9 +180,11 @@ class Programmer(QMainWindow):
         self.startButton.show()
 
     def start(self):
-        self.pbar.setValue(0)
         if self.port is None:
+            err_dialog = QErrorMessage(self)
+            err_dialog.showMessage('You must select a valid serial port!')
             return
+        self.pbar.setValue(0)
         self.startButton.hide()
         self.stopButton.show()
         # manage the smartdrive thread
@@ -206,6 +208,7 @@ class Programmer(QMainWindow):
         # wire up all the events
         self.smartDrive.bootloaderStatus.connect(self.onBootloaderState)
         self.smartDrive.bootloaderFailed.connect(self.onBootloaderFailed)
+        self.smartDrive.bootloaderFailed.connect(self.thread.quit)
         self.smartDrive.bootloaderFinished.connect(self.onBootloaderFinished)
         a = lambda : self.showAction(
             'Set the DIP switches to Firmware Programming',
@@ -217,6 +220,7 @@ class Programmer(QMainWindow):
 
         self.smartDrive.firmwareStatus.connect(self.onFirmwareState)
         self.smartDrive.firmwareFinished.connect(self.onFirmwareFinished)
+        self.smartDrive.firmwareFinished.connect(self.thread.quit)
         self.thread.started.connect(self.smartDrive.programBootloader)
         # start the thread
         self.thread.start()

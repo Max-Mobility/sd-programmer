@@ -53,6 +53,7 @@ class SmartDrive(QObject):
 
     def onBootloaderDataReady(self):
         data = str(self.bootloaderProcess.readAllStandardOutput(), 'utf-8')
+        print(data)
         self.lpc21ispOutput += data
         percent, state = self.parseLPC21ISPOutput()
         self.bootloaderStatus.emit(percent, state)
@@ -65,7 +66,6 @@ class SmartDrive(QObject):
         self.bootloaderStatus.emit(percent, state)
 
     def onLPC21ISPFinished(self, code, status):
-        print("LCP21ISP Finished: {} : {}".format(code, status))
         if code == 0:
             self.bootloaderStatus.emit(100, 'Bootloader complete')
             self.bootloaderFinished.emit()
