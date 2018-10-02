@@ -2,8 +2,8 @@ import glob
 import sys
 import serial
 from PyQt5 import QtGui
-from PyQt5.QtWidgets import (QWidget, QProgressBar, QPushButton, QLabel, QCheckBox, QComboBox, QApplication, QMainWindow, QStyleFactory, QDesktopWidget, QMessageBox, QVBoxLayout, QHBoxLayout, QSplitter)
-from PyQt5.QtCore import QBasicTimer, Qt
+from PyQt5.QtWidgets import (QWidget, QProgressBar, QPushButton, QLabel, QCheckBox, QComboBox, QApplication, QMainWindow, QStyleFactory, QTextEdit, QDesktopWidget, QMessageBox, QVBoxLayout, QHBoxLayout, QSplitter)
+from PyQt5.QtCore import QProcess, QBasicTimer, Qt
 
 import resource
 from smartdrive import SmartDrive
@@ -94,16 +94,31 @@ class Programmer(QMainWindow):
         self.timer = QBasicTimer()
         self.step = 0
 
+        # main controls
         self.mainWidget = QWidget()
         self.layout = QVBoxLayout()
         self.layout.addWidget(self.pbar)
         self.layout.addWidget(self.btn)
         self.mainWidget.setLayout(self.layout)
 
-        self.setCentralWidget(self.mainWidget)
+        # console output
+        self.output = QTextEdit()
+        self.output.readOnly = True
+
+        # lpc21isp process
+        self.bootloaderProcess = QProcess()
+        self.bootloaderProcess.readyRead.connect(self.bootloaderDataReady)
+
+        self.splitter = QSplitter(Qt.Vertical)
+        self.splitter.addWidget(self.mainWidget)
+        self.splitter.addWidget(self.output)
+        self.output.hide()
+
+        self.setCentralWidget(self.splitter)
         self.center()
         self.show()
 
+    # Functions for serial port control
     def refreshPorts(self):
         print("Refreshing serial ports")
         self.serial_ports = listSerialPorts()
@@ -121,6 +136,7 @@ class Programmer(QMainWindow):
             print("Changing from {} to {}".format(self.port, newPort))
             self.port = newPort
 
+    # functions for controlling the bootloader
     def timerEvent(self, e):
         if self.step >= 100:
             self.timer.stop()
@@ -131,12 +147,35 @@ class Programmer(QMainWindow):
 
     def start(self):
         if self.timer.isActive():
+            self.bootloaderProcess.close()
             self.timer.stop()
+            self.output.clear()
             self.btn.setText('Start')
+            self.output.hide()
         else:
+            self.step = 0
+            self.output.show()
+            program = './exes/lpc21isp'
+            args = [
+                "-wipe",
+                "../ota-bootloader/src/ota-bootloader.hex",
+                self.port,
+                "38400",
+                "12000"
+            ]
+            self.bootloaderProcess.start(program, args)
             self.timer.start(100, self)
             self.btn.setText('Stop')
 
+    def bootloaderDataReady(self):
+        data = str(self.bootloaderProcess.readAll(), 'utf-8')
+
+        cursor = self.output.textCursor()
+        cursor.movePosition(cursor.End)
+        cursor.insertText(data)
+        self.output.ensureCursorVisible()
+
+    # window functions
     def center(self):
         qr = self.frameGeometry()
         cp = QDesktopWidget().availableGeometry().center()
