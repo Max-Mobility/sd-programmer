@@ -159,19 +159,15 @@ class Programmer(QMainWindow):
         pass
 
     def onBootloaderFailed(self, status):
-        err_dialog = QErrorMessage(self)
-        msg = 'Bootloader programming failed!<br>{}'.format(
-            self.smartDrive.lpc21ispOutput.replace('\n','<br>')
-        )
-        err_dialog.showMessage(msg)
+        msg = self.smartDrive.lpc21ispOutput.replace('\n','<br>')
+        QMessageBox.critical(self, 'Bootloader Programming Failure',
+                             msg, QMessageBox.Ok, QMessageBox.Ok)
         self.stop()
 
     def onFirmwareFailed(self, status):
-        err_dialog = QErrorMessage(self)
-        msg = 'MX2+ firmware programming failed!<br>{}'.format(
-            status.replace('\n','<br>')
-        )
-        err_dialog.showMessage(msg)
+        msg = status.replace('\n','<br>')
+        QMessageBox.critical(self, 'MX2+ Firmware Programming Failure',
+                             msg, QMessageBox.Ok, QMessageBox.Ok)
         self.stop()
 
     def onFirmwareFinished(self):
