@@ -3,7 +3,7 @@ def checkSum(data, mask=0xFF):
     for i in range(0,len(data)):
         cs += data[i]
     cs = (cs & mask) ^ mask
-    return chr(cs)
+    return cs
 
 class Packet:
     command  = 0x02
@@ -20,6 +20,8 @@ class Packet:
 
     def __init__(self, Type=None, SubType=None, data=None):
         if Type is not None and SubType is not None:
+            self.Type = Type
+            self.SubType = SubType
             length = len(data) if data is not None else 0
             self.data = bytearray(length + self.minPacketLength)
             self.data[0] = 0xFE
@@ -35,8 +37,9 @@ class Packet:
 
         elif data is not None:
             self.data = data
-            self.Type = self.data[0]
-            self.SubType = self.data[1]
+            if len(self.data) > 0:
+                self.Type = self.data[0]
+                self.SubType = self.data[1]
         else:
             raise ValueError("must provide either data or Type AND SubType")
 
@@ -44,12 +47,11 @@ class Packet:
         return ' '.join('{:02x}'.format(x) for x in self.data)
 
     def isValid(self):
-        if self.data is None:
+        if self.data is None or len(self.data) < self.minPacketLength:
             return False
         payloadLen = (len(self.data) - self.minPacketLength)
         crc = checkSum(self.data[3:(3+payloadLen)])
-        if (payloadLen < 0 or
-            self.data[0] != 0xFE or
+        if (self.data[0] != 0xFE or
             self.data[1] != Type or
             self.data[2] != SubType or
             self.data[-3] != payloadLen or

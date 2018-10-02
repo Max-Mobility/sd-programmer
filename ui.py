@@ -3,7 +3,7 @@ import sys
 import serial
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import (QWidget, QProgressBar, QPushButton, QLabel, QCheckBox, QComboBox, QApplication, QMainWindow, QStyleFactory, QTextEdit, QDesktopWidget, QMessageBox, QVBoxLayout, QHBoxLayout, QSplitter)
-from PyQt5.QtCore import QProcess, QBasicTimer, Qt
+from PyQt5.QtCore import QProcess, QBasicTimer, Qt, QObject, QRunnable, QThread, QThreadPool, pyqtSignal
 
 import resource
 from smartdrive import SmartDrive
@@ -42,6 +42,10 @@ def listSerialPorts():
 class Programmer(QMainWindow):
     def __init__(self):
         super().__init__()
+
+        self.port = None
+        self.thread = None
+        self.smartDrive = None
         self.initUI()
 
     def initUI(self):
@@ -67,7 +71,6 @@ class Programmer(QMainWindow):
 
         # Create the widgets for the program (embeddable in the
         # toolbar or elsewhere)
-        self.port = None
         self.port_selector = QComboBox(self)
         self.refreshPorts()
         self.port_selector.activated[str].connect(self.changePort)
@@ -88,33 +91,20 @@ class Programmer(QMainWindow):
         self.pbar = QProgressBar(self)
         self.pbar.setGeometry(0,0,100, 10)
 
+        self.pLabel = QLabel("")
+
         self.btn = QPushButton('Start', self)
         self.btn.clicked.connect(self.start)
-
-        self.timer = QBasicTimer()
-        self.step = 0
 
         # main controls
         self.mainWidget = QWidget()
         self.layout = QVBoxLayout()
         self.layout.addWidget(self.pbar)
+        self.layout.addWidget(self.pLabel)
         self.layout.addWidget(self.btn)
         self.mainWidget.setLayout(self.layout)
 
-        # console output
-        self.output = QTextEdit()
-        self.output.readOnly = True
-
-        # lpc21isp process
-        self.bootloaderProcess = QProcess()
-        self.bootloaderProcess.readyRead.connect(self.bootloaderDataReady)
-
-        self.splitter = QSplitter(Qt.Vertical)
-        self.splitter.addWidget(self.mainWidget)
-        self.splitter.addWidget(self.output)
-        self.output.hide()
-
-        self.setCentralWidget(self.splitter)
+        self.setCentralWidget(self.mainWidget)
         self.center()
         self.show()
 
@@ -136,44 +126,59 @@ class Programmer(QMainWindow):
             print("Changing from {} to {}".format(self.port, newPort))
             self.port = newPort
 
+    def onBootloaderState(self, percent, state):
+        self.pbar.setValue(percent / 2)
+        self.pLabel.setText(state)
+
+    def onFirmwareState(self, percent, state):
+        self.pbar.setValue(50 + percent / 2)
+        self.pLabel.setText(state)
+
+    def onBootloaderFinished(self):
+        pass
+
+    def onFirmwareFinished(self):
+        pass
+
+    def onCancel(self):
+        pass
+
     # functions for controlling the bootloader
-    def timerEvent(self, e):
-        if self.step >= 100:
-            self.timer.stop()
-            self.btn.setText('Finished')
-            return
-        self.step = self.step + 1
-        self.pbar.setValue(self.step)
-
     def start(self):
-        if self.timer.isActive():
-            self.bootloaderProcess.close()
-            self.timer.stop()
-            self.output.clear()
+        if self.port is None:
+            return
+        if self.smartDrive is not None and self.smartDrive.isProgramming:
             self.btn.setText('Start')
-            self.output.hide()
+            self.smartDrive.stop()
         else:
-            self.step = 0
-            self.output.show()
-            program = './exes/lpc21isp'
-            args = [
-                "-wipe",
-                "../ota-bootloader/src/ota-bootloader.hex",
-                self.port,
-                "38400",
-                "12000"
-            ]
-            self.bootloaderProcess.start(program, args)
-            self.timer.start(100, self)
             self.btn.setText('Stop')
-
-    def bootloaderDataReady(self):
-        data = str(self.bootloaderProcess.readAll(), 'utf-8')
-
-        cursor = self.output.textCursor()
-        cursor.movePosition(cursor.End)
-        cursor.insertText(data)
-        self.output.ensureCursorVisible()
+            # manage the smartdrive thread
+            if self.thread is not None:
+                self.thread.quit()
+                self.thread.wait()
+            self.thread = QThread()
+            # open the firmware file
+            try:
+                f = open('./firmwares/MX2+.15.ota', 'rb')
+            except Exception as error:
+                print("ERROR: Couldn't open file {}".format(filename))
+                return
+            else:
+                with f:
+                    fileData = bytearray(f.read())
+            # create the smartdrive
+            self.smartDrive = SmartDrive(self.port, fileData)
+            # move the smartdrive to the thread
+            self.smartDrive.moveToThread(self.thread)
+            # wire up all the events
+            self.smartDrive.bootloaderStatus.connect(self.onBootloaderState)
+            self.smartDrive.bootloaderFinished.connect(self.smartDrive.programFirmware)
+            self.smartDrive.bootloaderFinished.connect(self.onBootloaderFinished)
+            self.smartDrive.firmwareStatus.connect(self.onFirmwareState)
+            self.smartDrive.firmwareFinished.connect(self.onFirmwareFinished)
+            self.thread.started.connect(self.smartDrive.programBootloader)
+            # start the thread
+            self.thread.start()
 
     # window functions
     def center(self):
