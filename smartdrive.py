@@ -1,3 +1,4 @@
+import re
 import time
 import serial
 from PyQt5.QtCore import QObject, QProcess, pyqtSignal, pyqtSlot
@@ -5,6 +6,7 @@ from PyQt5.QtCore import QObject, QProcess, pyqtSignal, pyqtSlot
 from packet import Packet
 
 class SmartDrive(QObject):
+    totalLPC21ISPLength = 574
     bootloaderStatus = pyqtSignal(int, str)
     bootloaderFinished = pyqtSignal()
     bootloaderFailed = pyqtSignal(str)
@@ -53,7 +55,6 @@ class SmartDrive(QObject):
 
     def onBootloaderDataReady(self):
         data = str(self.bootloaderProcess.readAllStandardOutput(), 'utf-8')
-        print(data)
         self.lpc21ispOutput += data
         percent, state = self.parseLPC21ISPOutput()
         self.bootloaderStatus.emit(percent, state)
@@ -76,8 +77,14 @@ class SmartDrive(QObject):
     def parseLPC21ISPOutput(self):
         data = self.lpc21ispOutput
         # TODO: regex here to determine status and percent
-        percent = 0
-        status = 'Synchronizing'
+        m = re.split(r'Sector \d: (\.+)', self.lpc21ispOutput, re.M)
+        if len(m) > 1:
+            percent = len(''.join(m[1:-1]).replace('\n','')) / self.totalLPC21ISPLength * 100
+        else:
+            percent = 0
+        status = m[0].split('\n')[-1]
+        if len(status) == 0:
+            status = "Writing new firmware."
         return percent, status
 
     @pyqtSlot()
@@ -112,10 +119,10 @@ class SmartDrive(QObject):
             # receive ota ready
             respData = bytearray(port.read(Packet.otaReadyLength))
             resp = Packet(data=respData)
-            if not resp.isValid():
-                pass
-            elif resp.Type == Packet.otaReady:
+            if resp.isValid(Type=Packet.command, SubType=Packet.otaReady):
                 haveRecvReady = True
+            else:
+                pass
 
             if not self.isProgramming:
                 break

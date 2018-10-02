@@ -6,6 +6,9 @@ def checkSum(data, mask=0xFF):
     return cs
 
 class Packet:
+    start    = 0xFE
+    end      = 0xEF
+
     command  = 0x02
     ota      = 0x04
 
@@ -24,7 +27,7 @@ class Packet:
             self.SubType = SubType
             length = len(data) if data is not None else 0
             self.data = bytearray(length + self.minPacketLength)
-            self.data[0] = 0xFE
+            self.data[0] = self.start
             self.data[1] = self.Type
             self.data[2] = self.SubType
 
@@ -33,13 +36,13 @@ class Packet:
 
             self.data[-3] = length
             self.data[-2] = checkSum(data)
-            self.data[-1] = 0xEF
+            self.data[-1] = self.end
 
         elif data is not None:
             self.data = data
             if len(self.data) > 0:
-                self.Type = self.data[0]
-                self.SubType = self.data[1]
+                self.Type = self.data[1]
+                self.SubType = self.data[2]
         else:
             raise ValueError("must provide either data or Type AND SubType")
 
