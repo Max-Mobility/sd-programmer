@@ -156,7 +156,11 @@ class Programmer(QMainWindow):
         self.pLabel.setText(state)
 
     def onBootloaderFinished(self):
-        pass
+        self.showAction(
+            'Set the DIP switches to Firmware Programming',
+            'Press when DIP switches are set.'
+        )
+        self.actionButton.clicked.connect(self.smartDrive.programFirmware)
 
     def onBootloaderFailed(self, status):
         msg = self.smartDrive.lpc21ispOutput.replace('\n','<br>')
@@ -195,7 +199,6 @@ class Programmer(QMainWindow):
         self.actionButton.hide()
 
     def stop(self):
-        self.actionButton.clicked.disconnect()
         if self.smartDrive is not None and self.smartDrive.isProgramming:
             self.smartDrive.stop()
         self.hideAll()
@@ -251,13 +254,6 @@ class Programmer(QMainWindow):
         self.smartDrive.bootloaderFailed.connect(self.onBootloaderFailed)
         self.smartDrive.bootloaderFailed.connect(self.thread.quit)
         self.smartDrive.bootloaderFinished.connect(self.onBootloaderFinished)
-        a = lambda : self.showAction(
-            'Set the DIP switches to Firmware Programming',
-            'Press when DIP switches are set.'
-        )
-        self.smartDrive.bootloaderFinished.connect(a)
-        #self.smartDrive.bootloaderFinished.connect(self.smartDrive.programFirmware)
-        self.actionButton.clicked.connect(self.smartDrive.programFirmware)
 
         self.smartDrive.firmwareStatus.connect(self.onFirmwareState)
         self.smartDrive.firmwareFinished.connect(self.onFirmwareFinished)
