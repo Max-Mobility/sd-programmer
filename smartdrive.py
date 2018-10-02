@@ -4,6 +4,7 @@ import serial
 import sys
 from PyQt5.QtCore import QObject, QProcess, pyqtSignal, pyqtSlot
 
+import resource
 from packet import Packet
 
 class SmartDrive(QObject):
@@ -44,7 +45,7 @@ class SmartDrive(QObject):
         self.bootloaderProcess.finished.connect(self.onLPC21ISPFinished)
         self.stopSignal.connect(self.bootloaderProcess.kill)
 
-        program = './exes/lpc21isp'
+        program = resource.path('exes/lpc21isp')
         if sys.platform.startswith('win'):
             program += '.exe'
         args = [
@@ -105,12 +106,17 @@ class SmartDrive(QObject):
         if not self.isProgramming:
             return
         # open the port
-        port = serial.Serial(port=self.portName,
-                             baudrate=115200,
-                             bytesize=serial.EIGHTBITS,
-                             parity=serial.PARITY_NONE,
-                             stopbits=serial.STOPBITS_ONE,
-                             timeout=1)
+        try:
+            port = serial.Serial(port=self.portName,
+                                 baudrate=115200,
+                                 bytesize=serial.EIGHTBITS,
+                                 parity=serial.PARITY_NONE,
+                                 stopbits=serial.STOPBITS_ONE,
+                                 timeout=1)
+        except Exception as error:
+            self.firmwareFailed.emit("Couldn't open serial port {}: {}".format(self.portName, error))
+            return
+
         # wait for ready
         self.firmwareStatus.emit(0, 'Waiting for Bootloader Ready')
         while not haveRecvReady:
@@ -125,7 +131,7 @@ class SmartDrive(QObject):
             if resp.isValid(Type=Packet.command, SubType=Packet.otaReady):
                 haveRecvReady = True
             else:
-                pass
+                time.sleep(0.5)
 
             if not self.isProgramming:
                 break

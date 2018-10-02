@@ -107,6 +107,8 @@ class Programmer(QMainWindow):
         self.actionButton.clicked.connect(self.performAction)
         self.actionButton.hide()
 
+        self.begin()
+
         # main controls
         self.mainWidget = QWidget()
         self.layout = QVBoxLayout()
@@ -157,11 +159,24 @@ class Programmer(QMainWindow):
         pass
 
     def onBootloaderFailed(self, status):
-        self.pLabel.setText(status)
+        err_dialog = QErrorMessage(self)
+        msg = 'Bootloader programming failed!<br>{}'.format(
+            self.smartDrive.lpc21ispOutput.replace('\n','<br>')
+        )
+        err_dialog.showMessage(msg)
+        self.stop()
+
+    def onFirmwareFailed(self, status):
+        err_dialog = QErrorMessage(self)
+        msg = 'MX2+ firmware programming failed!<br>{}'.format(
+            status.replace('\n','<br>')
+        )
+        err_dialog.showMessage(msg)
         self.stop()
 
     def onFirmwareFinished(self):
-        self.pLabel.setText('MX2+ programming complete')
+        msg = 'MX2+ firmware successfully programmed!'
+        QMessageBox.information(self, 'Success', msg, QMessageBox.Ok, QMessageBox.Ok)
         self.stop()
 
     # functions for controlling the programming
@@ -175,13 +190,33 @@ class Programmer(QMainWindow):
         self.actionLabel.hide()
         self.actionButton.hide()
 
-    def stop(self):
-        if self.smartDrive is not None and self.smartDrive.isProgramming:
-            self.actionLabel.hide()
-            self.actionButton.hide()
-            self.smartDrive.stop()
+    def hideAll(self):
+        self.pbar.hide()
+        self.pLabel.hide()
+        self.startButton.hide()
         self.stopButton.hide()
+        self.actionLabel.hide()
+        self.actionButton.hide()
+
+    def stop(self):
+        self.actionButton.clicked.disconnect()
+        if self.smartDrive is not None and self.smartDrive.isProgramming:
+            self.smartDrive.stop()
+        self.hideAll()
+        self.begin()
+
+    def begin(self):
+        self.hideAll()
+        self.showAction(
+            'Set the DIP switches to Bootloader Programming',
+            'Press when DIP switches are set.'
+        )
+        self.actionButton.clicked.connect(self.startAvailable)
+
+    def startAvailable(self):
+        self.hideAll()
         self.startButton.show()
+        self.actionButton.clicked.disconnect(self.startAvailable)
 
     def start(self):
         if self.port is None:
@@ -193,8 +228,10 @@ class Programmer(QMainWindow):
         self.firmwarePercent = 0
         self.updateProgressBar()
         # since we've started, hide the start button and show the stop button
-        self.startButton.hide()
+        self.hideAll()
         self.stopButton.show()
+        self.pbar.show()
+        self.pLabel.show()
         # manage the smartdrive thread
         if self.thread is not None:
             self.thread.quit()
@@ -229,6 +266,8 @@ class Programmer(QMainWindow):
         self.smartDrive.firmwareStatus.connect(self.onFirmwareState)
         self.smartDrive.firmwareFinished.connect(self.onFirmwareFinished)
         self.smartDrive.firmwareFinished.connect(self.thread.quit)
+        self.smartDrive.firmwareFailed.connect(self.onFirmwareFailed)
+        self.smartDrive.firmwareFailed.connect(self.thread.quit)
         self.thread.started.connect(self.smartDrive.programBootloader)
         # start the thread
         self.thread.start()

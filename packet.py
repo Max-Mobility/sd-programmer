@@ -40,7 +40,7 @@ class Packet:
 
         elif data is not None:
             self.data = data
-            if len(self.data) > 0:
+            if len(self.data) >= self.minPacketLength:
                 self.Type = self.data[1]
                 self.SubType = self.data[2]
         else:
