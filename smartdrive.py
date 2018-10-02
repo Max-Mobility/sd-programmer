@@ -36,7 +36,8 @@ class SmartDrive(QObject):
 
         # lpc21isp process
         self.bootloaderProcess = QProcess()
-        self.bootloaderProcess.readyRead.connect(self.onBootloaderDataReady)
+        self.bootloaderProcess.readyReadStandardOutput.connect(self.onBootloaderDataReady)
+        self.bootloaderProcess.readyReadStandardError.connect(self.onBootloaderErrorReady)
         self.bootloaderProcess.finished.connect(self.onLPC21ISPFinished)
         self.stopSignal.connect(self.bootloaderProcess.kill)
 
@@ -51,7 +52,14 @@ class SmartDrive(QObject):
         self.bootloaderProcess.start(program, args)
 
     def onBootloaderDataReady(self):
-        data = str(self.bootloaderProcess.readAll(), 'utf-8')
+        data = str(self.bootloaderProcess.readAllStandardOutput(), 'utf-8')
+        self.lpc21ispOutput += data
+        percent, state = self.parseLPC21ISPOutput()
+        self.bootloaderStatus.emit(percent, state)
+
+    def onBootloaderErrorReady(self):
+        data = str(self.bootloaderProcess.readAllStandardError(), 'utf-8')
+        print("STDERR:",data)
         self.lpc21ispOutput += data
         percent, state = self.parseLPC21ISPOutput()
         self.bootloaderStatus.emit(percent, state)
@@ -62,7 +70,7 @@ class SmartDrive(QObject):
             self.bootloaderStatus.emit(100, 'Bootloader complete')
             self.bootloaderFinished.emit()
         else:
-            self.bootloaderFailed.emit("{}: {}".format(code, status))
+            self.bootloaderFailed.emit("Bootloader failed: {}: {}".format(code, status))
         self.bootloaderProcess = None
 
     def parseLPC21ISPOutput(self):

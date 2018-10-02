@@ -124,7 +124,6 @@ class Programmer(QMainWindow):
 
     # Functions for serial port control
     def refreshPorts(self):
-        print("Refreshing serial ports")
         self.serial_ports = listSerialPorts()
         self.port_selector.clear()
         self.port_selector.addItems(self.serial_ports)
@@ -137,9 +136,9 @@ class Programmer(QMainWindow):
 
     def changePort(self, newPort):
         if newPort != self.port:
-            print("Changing from {} to {}".format(self.port, newPort))
             self.port = newPort
 
+    # callbacks from smartdrive programming state signals
     def onBootloaderState(self, percent, state):
         self.pbar.setValue(percent / 2)
         self.pLabel.setText(state)
@@ -151,7 +150,8 @@ class Programmer(QMainWindow):
     def onBootloaderFinished(self):
         pass
 
-    def onBootloaderFailed(self):
+    def onBootloaderFailed(self, status):
+        self.pLabel.setText(status)
         self.stop()
 
     def onFirmwareFinished(self):
@@ -160,16 +160,7 @@ class Programmer(QMainWindow):
     def onCancel(self):
         pass
 
-    def stop(self):
-        if self.smartDrive is not None and self.smartDrive.isProgramming:
-            self.pLabel.setText('Stopped')
-            self.actionLabel.hide()
-            self.actionButton.hide()
-            self.smartDrive.stop()
-        self.stopButton.hide()
-        self.startButton.show()
-
-    # functions for controlling the bootloader
+    # functions for controlling the programming
     def showAction(self, labelText, buttonText):
         self.actionLabel.setText(labelText)
         self.actionLabel.show()
@@ -179,6 +170,14 @@ class Programmer(QMainWindow):
     def performAction(self):
         self.actionLabel.hide()
         self.actionButton.hide()
+
+    def stop(self):
+        if self.smartDrive is not None and self.smartDrive.isProgramming:
+            self.actionLabel.hide()
+            self.actionButton.hide()
+            self.smartDrive.stop()
+        self.stopButton.hide()
+        self.startButton.show()
 
     def start(self):
         self.pbar.setValue(0)
@@ -236,6 +235,7 @@ class Programmer(QMainWindow):
             QMessageBox.No, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
+            self.stop()
             event.accept()
         else:
             event.ignore()
