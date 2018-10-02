@@ -7,8 +7,12 @@ from packet import Packet
 class SmartDrive(QObject):
     bootloaderStatus = pyqtSignal(int, str)
     bootloaderFinished = pyqtSignal()
+    bootloaderFailed = pyqtSignal(str)
+
     firmwareStatus = pyqtSignal(int, str)
     firmwareFinished = pyqtSignal()
+    firmwareFailed = pyqtSignal(str)
+
     stopSignal = pyqtSignal()
 
     def __init__(self, port, fw, transmitDelay=0.001):
@@ -54,14 +58,12 @@ class SmartDrive(QObject):
 
     def onLPC21ISPFinished(self, code, status):
         print("LCP21ISP Finished: {} : {}".format(code, status))
-        percent = 100
         if code == 0:
-            state = 'Finished'
+            self.bootloaderStatus.emit(100, 'Bootloader complete')
+            self.bootloaderFinished.emit()
         else:
-            state = 'Failed'
+            self.bootloaderFailed.emit("{}: {}".format(code, status))
         self.bootloaderProcess = None
-        self.bootloaderStatus.emit(percent, state)
-        self.bootloaderFinished.emit()
 
     def parseLPC21ISPOutput(self):
         data = self.lpc21ispOutput
@@ -130,7 +132,7 @@ class SmartDrive(QObject):
             return
 
         # send stop
-        self.firmwareStatus.emit(100, 'Finishing MX2+ OTA')
+        self.firmwareStatus.emit(100, 'Rebooting MX2+')
         p = Packet(Packet.command, Packet.otaStop, [Packet.smartDrive])
         port.write(p.data)
 
