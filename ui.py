@@ -220,7 +220,7 @@ class Programmer(QMainWindow):
         self.smartDrive.bootloaderFinished.connect(self.onBootloaderFinished)
         a = lambda : self.showAction(
             'Set the DIP switches to Firmware Programming',
-            'Press when complete.'
+            'Press when DIP switches are set.'
         )
         self.smartDrive.bootloaderFinished.connect(a)
         #self.smartDrive.bootloaderFinished.connect(self.smartDrive.programFirmware)

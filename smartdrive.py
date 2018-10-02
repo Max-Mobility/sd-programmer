@@ -1,6 +1,7 @@
 import re
 import time
 import serial
+import sys
 from PyQt5.QtCore import QObject, QProcess, pyqtSignal, pyqtSlot
 
 from packet import Packet
@@ -44,6 +45,8 @@ class SmartDrive(QObject):
         self.stopSignal.connect(self.bootloaderProcess.kill)
 
         program = './exes/lpc21isp'
+        if sys.platform.startswith('win'):
+            program += '.exe'
         args = [
             "-wipe",
             "./firmwares/ota-bootloader.hex",
