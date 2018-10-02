@@ -138,13 +138,19 @@ class Programmer(QMainWindow):
         if newPort != self.port:
             self.port = newPort
 
+    # updating the display
+    def updateProgressBar(self):
+        self.pbar.setValue((self.bootloaderPercent + self.firmwarePercent) / 2.0)
+
     # callbacks from smartdrive programming state signals
     def onBootloaderState(self, percent, state):
-        self.pbar.setValue(percent / 2)
+        self.bootloaderPercent = percent
+        self.updateProgressBar()
         self.pLabel.setText(state)
 
     def onFirmwareState(self, percent, state):
-        self.pbar.setValue(50 + percent / 2)
+        self.firmwarePercent = percent
+        self.updateProgressBar()
         self.pLabel.setText(state)
 
     def onBootloaderFinished(self):
@@ -155,10 +161,8 @@ class Programmer(QMainWindow):
         self.stop()
 
     def onFirmwareFinished(self):
-        pass
-
-    def onCancel(self):
-        pass
+        self.pLabel.setText('MX2+ programming complete')
+        self.stop()
 
     # functions for controlling the programming
     def showAction(self, labelText, buttonText):
@@ -184,7 +188,11 @@ class Programmer(QMainWindow):
             err_dialog = QErrorMessage(self)
             err_dialog.showMessage('You must select a valid serial port!')
             return
-        self.pbar.setValue(0)
+        # reset all progrees and update the progress bar
+        self.bootloaderPercent = 0
+        self.firmwarePercent = 0
+        self.updateProgressBar()
+        # since we've started, hide the start button and show the stop button
         self.startButton.hide()
         self.stopButton.show()
         # manage the smartdrive thread

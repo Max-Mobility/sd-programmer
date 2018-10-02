@@ -151,8 +151,9 @@ class SmartDrive(QObject):
         p = Packet(Packet.command, Packet.otaStop, [Packet.smartDrive])
         port.write(p.data)
 
-        # let everyone know we're finished
-        self.firmwareFinished.emit()
-        self.isProgramming = False
         # close the port
         port.close()
+
+        # let everyone know we're finished
+        self.isProgramming = False
+        self.firmwareFinished.emit()
