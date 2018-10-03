@@ -97,6 +97,8 @@ class BootloaderPage(BasePage):
 
     @pyqtSlot()
     def onBootloaderFinished(self):
+        self.stopButton.hide()
+        self.progressBar.setProgress(100, 'Bootloader Programming Complete!')
         super().finished.emit()
 
     @pyqtSlot(int, str)
@@ -168,6 +170,8 @@ class FirmwarePage(BasePage):
 
     @pyqtSlot()
     def onFirmwareFinished(self):
+        self.stopButton.hide()
+        self.progressBar.setProgress(100, 'Firmware Programming Complete!')
         super().finished.emit()
 
     @pyqtSlot(int, str)
