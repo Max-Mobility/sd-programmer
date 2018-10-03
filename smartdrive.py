@@ -27,7 +27,7 @@ class SmartDrive(QObject):
 
         # open the firmware file
         try:
-            f = open(resource.path(fwFileName), 'rb')
+            f = open(fwFileName, 'rb')
         except Exception as error:
             print("[SmartDrive] Couldn't open file {}".format(fwFileName))
         else:
@@ -89,7 +89,7 @@ class SmartDrive(QObject):
             program += '.exe'
         args = [
             "-wipe",
-            "./firmwares/ota-bootloader.hex",
+            resource.path("firmwares/ota-bootloader.hex"),
             self.portName,
             "38400",  # baudrate
             "12000"   # crystal frequency on board
