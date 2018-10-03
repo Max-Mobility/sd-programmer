@@ -169,12 +169,11 @@ class SmartDrive(QObject):
             return
 
         # init variables
+        self.isProgramming = True
         self.firmwarePercent = 0
         self.firmwareState = ''
         size = len(self.fw)
         haveRecvReady = False
-        if not self.isProgramming:
-            return
         port = serial.Serial(port=self.portName,
                              baudrate=115200,
                              bytesize=serial.EIGHTBITS,
