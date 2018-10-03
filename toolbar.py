@@ -27,5 +27,9 @@ def toolbar_add_widget(self, tb_name, tb_widget):
     if tb_name in self.toolbars:
         self.toolbars[tb_name].addWidget(tb_widget)
 
+def toolbar_add_separator(self, tb_name):
+    if tb_name in self.toolbars:
+        self.toolbars[tb_name].addSeparator()
+
 def toolbar_remove(self, tb_name):
     pass

@@ -2,8 +2,8 @@ import glob
 import sys
 import serial
 from PyQt5 import QtGui
-from PyQt5.QtWidgets import (QWidget, QPushButton, QLabel, QComboBox, QApplication, QMainWindow, QStyleFactory, QDesktopWidget, QMessageBox, QErrorMessage, QSplitter, QScrollArea)
-from PyQt5.QtCore import QProcess, QBasicTimer, Qt, QObject, QRunnable, QThread, QThreadPool, pyqtSignal
+from PyQt5.QtWidgets import (QWidget, QPushButton, QLabel, QComboBox, QApplication, QMainWindow, QStyleFactory, QDesktopWidget, QMessageBox, QErrorMessage, QFileDialog, QSplitter, QScrollArea)
+from PyQt5.QtCore import QFileInfo, QFile, QProcess, QBasicTimer, Qt, QObject, QRunnable, QThread, QThreadPool, pyqtSignal
 
 import resource
 import pages
@@ -48,6 +48,7 @@ class Programmer(QMainWindow):
         self.port = None
         self.thread = None
         self.smartDrive = None
+        self.fwFileName = None
         self.initUI()
         self.initSD()
 
@@ -61,15 +62,20 @@ class Programmer(QMainWindow):
         self.setWindowTitle('Programmer')
 
         # Create the actions for the program
-        exitAction = Action(resource.path('icons/toolbar/exit.png'), 'Exit', self)
+        exitAction = Action(resource.path('icons/toolbar/exit.png'), 'Exit Programmer', self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.setStatusTip('Exit application')
         exitAction.triggered.connect(self.close)
 
-        refreshAction = Action(resource.path('icons/toolbar/refresh.png'), 'Refresh', self)
+        refreshAction = Action(resource.path('icons/toolbar/refresh.png'), 'Refresh Serial Ports', self)
         refreshAction.setShortcut('Ctrl+R')
         refreshAction.setStatusTip('Refresh Serial Port List')
         refreshAction.triggered.connect(self.refreshPorts)
+
+        openAction = Action(resource.path('icons/toolbar/open.png'), 'Select Firmware', self)
+        openAction.setStatusTip('Open MX2+ OTA File.')
+        openAction.setShortcut('Ctrl+O')
+        openAction.triggered.connect(self.onOpenFirmwareFile)
 
         # Create the widgets for the program (embeddable in the
         # toolbar or elsewhere)
@@ -82,13 +88,21 @@ class Programmer(QMainWindow):
         self.menubar_add_menu('&File')
         self.menu_add_action('&File', exitAction)
         self.menu_add_action('&File', refreshAction)
+        self.menu_add_action('&File', openAction)
 
         # Set up the toolbars for the program
         self.toolbar_init()
         self.toolbar_create('toolbar1')
         self.toolbar_add_action('toolbar1', exitAction)
-        self.toolbar_add_widget('toolbar1', self.port_selector)
+        self.toolbar_add_separator('toolbar1')
         self.toolbar_add_action('toolbar1', refreshAction)
+        self.toolbar_add_widget('toolbar1', QLabel('Serial Port:'))
+        self.toolbar_add_widget('toolbar1', self.port_selector)
+        self.toolbar_add_separator('toolbar1')
+        self.toolbar_add_action('toolbar1', openAction)
+        self.toolbar_add_widget('toolbar1', QLabel('MX2+ Firmware:'))
+        self.firmwareLabel = QLabel()
+        self.toolbar_add_widget('toolbar1', self.firmwareLabel)
 
         # main UI
         self.startPage = pages.StartPage()
@@ -155,22 +169,28 @@ class Programmer(QMainWindow):
         if newPort != self.port:
             self.port = newPort
 
-    def onFirmwareFinished(self):
-        msg = 'MX2+ firmware successfully programmed!'
-        QMessageBox.information(self, 'Success', msg, QMessageBox.Ok, QMessageBox.Ok)
-        self.stop()
+    def invalidFirmwareFile(self, err):
+        msg = err.replace('\n', '<br>')
+        QMessageBox.critical(self, 'Bad Firmware File', msg, QMessageBox.Ok, QMessageBox.Ok)
+
+    # functions for selecting the MX2+ firmware file
+    def onOpenFirmwareFile(self):
+        self.fwFileName, _ = QFileDialog.getOpenFileName(
+            self,
+            'Select MX2+ Firmware OTA File',
+            '',
+            'OTA Files (*.ota)',
+            options=QFileDialog.Options()
+        )
+        self.smartDrive.onFirmwareFileSelected(self.fwFileName)
+        labelText = "<b><i>{}</i></b>".format(QFileInfo(QFile(self.fwFileName)).fileName())
+        self.firmwareLabel.setText(labelText)
 
     # functions for controlling the programming
     def stop(self):
         self.smartDrive.stop()
         self.thread.quit()
         self.thread.wait()
-
-    def start(self):
-        if self.port is None:
-            err_dialog = QErrorMessage(self)
-            err_dialog.showMessage('You must select a valid serial port!')
-            return
 
     # window functions
     def center(self):
@@ -201,6 +221,7 @@ class Programmer(QMainWindow):
         toolbar_create, \
         toolbar_add_action, \
         toolbar_add_widget, \
+        toolbar_add_separator, \
         toolbar_remove
 
     from action import \

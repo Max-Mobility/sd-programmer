@@ -9,6 +9,9 @@ from packet import Packet
 
 class SmartDrive(QObject):
     totalLPC21ISPLength = 574
+
+    invalidFirmware = pyqtSignal(str)
+
     bootloaderStatus = pyqtSignal(int, str)
     bootloaderFinished = pyqtSignal()
     bootloaderFailed = pyqtSignal(str)
@@ -19,21 +22,17 @@ class SmartDrive(QObject):
 
     stopSignal = pyqtSignal()
 
-    def __init__(self, port, fwFileName='./firmwares/MX2+.15.ota', transmitDelay=0.001):
+    def __init__(self, port, fwFileName=None, transmitDelay=0.001):
         super().__init__()
-        self.transmitDelay=transmitDelay
-        self.isProgramming = False
+        self.transmitDelay = transmitDelay
         self.portName = port
+        self.isProgramming = False
+        self.fw = None
+        self.fwFileName = None
 
-        # open the firmware file
-        try:
-            f = open(fwFileName, 'rb')
-        except Exception as error:
-            print("[SmartDrive] Couldn't open file {}".format(fwFileName))
-        else:
-            with f:
-                fileData = bytearray(f.read())
-        self.fw = fileData
+        if fwFileName is not None:
+            self.onFirmwareFileSelected(fwFileName)
+
         self.bootloaderPercent = 0
         self.bootloaderState = ''
         self.firmwarePercent = 0
@@ -43,6 +42,28 @@ class SmartDrive(QObject):
     @pyqtSlot(str)
     def onPortSelected(self, portName):
         self.portName = portName
+
+    @pyqtSlot(str)
+    def onFirmwareFileSelected(self, fwFileName):
+        self.fw = None
+
+        self.fwFileName = fwFileName
+        if fwFileName is None:
+            msg = "Couldn't open firmware file '{}'!\n{}".format(self.fwFileName, error)
+            self.invalidFirmware.emit(msg)
+            return
+
+        # open the firmware file
+        try:
+            f = open(self.fwFileName, 'rb')
+        except Exception as error:
+            msg = "Couldn't open firmware file '{}'!\n{}".format(self.fwFileName, error)
+            self.invalidFirmware.emit(msg)
+            return
+        else:
+            with f:
+                fileData = bytearray(f.read())
+        self.fw = fileData
 
     def checkPort(self):
         '''Returns true if we have a valid port, false otherwise'''
@@ -141,6 +162,10 @@ class SmartDrive(QObject):
             self.firmwareFailed.emit(
                 "Couldn't open serial port '{}'".format(self.portName)
             )
+            return
+
+        if self.fw is None or len(self.fw) <= 0:
+            self.firmwareFailed.emit("Please select MX2+ firmware file!")
             return
 
         # init variables
