@@ -77,6 +77,14 @@ class Programmer(QMainWindow):
         openAction.setShortcut('Ctrl+O')
         openAction.triggered.connect(self.onOpenFirmwareFile)
 
+        aboutAction = Action(resource.path('icons/toolbar/about.png'), 'About', self)
+        aboutAction.setStatusTip('About MX2+ Programmer')
+        aboutAction.triggered.connect(self.about)
+
+        switchInfoAction = Action(resource.path('icons/toolbar/info.png'), 'DIP Switch Info', self)
+        switchInfoAction.setStatusTip('MX2+ DIP Switch Info')
+        switchInfoAction.triggered.connect(self.showSwitchInfo)
+
         # Create the widgets for the program (embeddable in the
         # toolbar or elsewhere)
         self.port_selector = QComboBox(self)
@@ -89,6 +97,10 @@ class Programmer(QMainWindow):
         self.menu_add_action('&File', exitAction)
         self.menu_add_action('&File', refreshAction)
         self.menu_add_action('&File', openAction)
+
+        self.menubar_add_menu('&Help')
+        self.menu_add_action('&Help', aboutAction)
+        self.menu_add_action('&Help', switchInfoAction)
 
         # Set up the toolbars for the program
         self.toolbar_init()
@@ -106,17 +118,13 @@ class Programmer(QMainWindow):
 
         # main UI
         self.startPage = pages.StartPage()
-        self.bootloaderSwitchesPage = pages.BootloaderSwitchesPage()
         self.bootloaderPage = pages.BootloaderPage()
-        self.firmwareSwitchesPage = pages.FirmwareSwitchesPage()
         self.firmwarePage = pages.FirmwarePage()
         self.endPage = pages.EndPage()
 
         self.pager = Pager()
         self.pager.addPage(self.startPage)
-        self.pager.addPage(self.bootloaderSwitchesPage)
         self.pager.addPage(self.bootloaderPage)
-        self.pager.addPage(self.firmwareSwitchesPage)
         self.pager.addPage(self.firmwarePage)
         self.pager.addPage(self.endPage)
 
@@ -147,12 +155,14 @@ class Programmer(QMainWindow):
         self.smartDrive.bootloaderFinished.connect(self.bootloaderPage.onBootloaderFinished)
         self.bootloaderPage.start.connect(self.smartDrive.programBootloader)
         self.bootloaderPage.stop.connect(self.smartDrive.stop)
+        self.bootloaderPage.finished.connect(self.pager.onNext)
 
         self.smartDrive.firmwareStatus.connect(self.firmwarePage.onProgressUpdate)
         self.smartDrive.firmwareFinished.connect(self.firmwarePage.onFirmwareFinished)
         self.smartDrive.firmwareFailed.connect(self.firmwarePage.onFirmwareFailed)
         self.firmwarePage.start.connect(self.smartDrive.programFirmware)
         self.firmwarePage.stop.connect(self.smartDrive.stop)
+        self.firmwarePage.finished.connect(self.pager.onNext)
         # start the thread
         self.thread.start()
 
@@ -194,6 +204,34 @@ class Programmer(QMainWindow):
         self.smartDrive.stop()
         self.thread.quit()
         self.thread.wait()
+
+    # general functions
+    def about(self):
+        msg = '''
+SmartDrive MX2+ Programmer
+
+This program walks the user through the programming process for the software on the SmartDrive MX2+.
+
+It allows the user to select the serial port on which they've connected the SmartDrive, as well as the specific firmware file they wish to upload to the SmartDrive.
+        '''
+        QMessageBox.information(
+            self, 'About', msg.replace('\n', '<br>'),
+            QMessageBox.Ok, QMessageBox.Ok)
+
+    def showSwitchInfo(self):
+        msg = '''
+1. Required for programming bootloader
+2. Required for programming SmartDrive
+3. Cleans the SmartDrive EEPROM
+4. UNUSED
+5. Locks the settings on the SD to what they are at that time (or what is saved in the SD EEPROM)
+6. UNUSED
+7. Limit the max speed to 6 km/h
+8. Force boot into bootloader for bluetooth OTA programming (DEBUGGING ONLY)
+        '''
+        QMessageBox.information(
+            self, 'DIP Switch Info', msg.replace('\n', '<br>'),
+            QMessageBox.Ok, QMessageBox.Ok)
 
     # window functions
     def center(self):

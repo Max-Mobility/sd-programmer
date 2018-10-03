@@ -30,6 +30,7 @@ class Pager(QWidget):
         lay.addLayout(btnLayout)
 
     # events
+    @pyqtSlot()
     def onNext(self):
         index = self.stack.currentIndex()
         top = self.stack.count() - 1
@@ -38,6 +39,7 @@ class Pager(QWidget):
             index = top
         self.stack.setCurrentIndex(index)
 
+    @pyqtSlot()
     def onPrevious(self):
         index = self.stack.currentIndex()
         bottom = 0
@@ -46,6 +48,7 @@ class Pager(QWidget):
             index = bottom
         self.stack.setCurrentIndex(index)
 
+    @pyqtSlot()
     def onFinish(self):
         self.disableFinish()
         self.disablePrevious()

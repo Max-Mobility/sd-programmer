@@ -33,31 +33,14 @@ class StartPage(BasePage):
         title = QLabel("Welcome to SmartDrive MX2+ Programming")
         picture = QLabel(self)
         picture.setPixmap(QtGui.QPixmap(resource.path('images/mx2+.jpg')).scaled(QSize(imageSize, imageSize), Qt.KeepAspectRatio))
-
-        self.layout.addWidget(title)
-        self.layout.addWidget(picture)
-
-    @pyqtSlot()
-    def onEnter(self):
-        super().finished.emit()
-
-class BootloaderSwitchesPage(BasePage):
-    def __init__(self, parent=None):
-        super().__init__(parent=parent)
-
-        title = QLabel("Configure Bootloader Programming")
         cableLabel = QLabel("Plug in the programming cables to the SmartDrive as shown below.")
         cablePicture = QLabel(self)
         cablePicture.setPixmap(QtGui.QPixmap(resource.path('images/cable.jpg')).scaled(QSize(imageSize, imageSize), Qt.KeepAspectRatio))
-        switchesLabel = QLabel("Set the MX2+ DIP switches for bootloader programming as shown below.")
-        switchesPicture = QLabel(self)
-        switchesPicture.setPixmap(QtGui.QPixmap(resource.path('images/bootloaderProgramming.jpg')).scaled(QSize(imageSize, imageSize), Qt.KeepAspectRatio))
 
         self.layout.addWidget(title)
+        self.layout.addWidget(picture)
         self.layout.addWidget(cableLabel)
         self.layout.addWidget(cablePicture)
-        self.layout.addWidget(switchesLabel)
-        self.layout.addWidget(switchesPicture)
 
     @pyqtSlot()
     def onEnter(self):
@@ -72,6 +55,10 @@ class BootloaderPage(BasePage):
         self.nextEnabled = False
 
         title = QLabel("Programming Bootloader")
+        switchesLabel = QLabel("Set the MX2+ DIP switches for bootloader programming as shown below.")
+        switchesPicture = QLabel(self)
+        switchesPicture.setPixmap(QtGui.QPixmap(resource.path('images/bootloaderProgramming.jpg')).scaled(QSize(imageSize, imageSize), Qt.KeepAspectRatio))
+
         self.progressBar = ProgressBar()
         self.startButton = QPushButton("Start")
         self.startButton.clicked.connect(self.onStart)
@@ -81,6 +68,8 @@ class BootloaderPage(BasePage):
         self.stopButton.hide()
 
         self.layout.addWidget(title)
+        self.layout.addWidget(switchesLabel)
+        self.layout.addWidget(switchesPicture)
         self.layout.addWidget(self.progressBar)
         self.layout.addWidget(self.startButton)
         self.layout.addWidget(self.stopButton)
@@ -119,15 +108,6 @@ class FirmwareSwitchesPage(BasePage):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
-        title = QLabel("Configure Firmware Programming")
-        switchesLabel = QLabel("Set the MX2+ DIP switches for firmware programming as shown below.")
-        switchesPicture = QLabel(self)
-        switchesPicture.setPixmap(QtGui.QPixmap(resource.path('images/firmwareProgramming.jpg')).scaled(QSize(imageSize, imageSize), Qt.KeepAspectRatio))
-
-        self.layout.addWidget(title)
-        self.layout.addWidget(switchesLabel)
-        self.layout.addWidget(switchesPicture)
-
     @pyqtSlot()
     def onEnter(self):
         super().finished.emit()
@@ -149,7 +129,13 @@ class FirmwarePage(BasePage):
         self.stopButton.clicked.connect(self.onStop)
         self.stopButton.hide()
 
+        switchesLabel = QLabel("Set the MX2+ DIP switches for firmware programming as shown below.")
+        switchesPicture = QLabel(self)
+        switchesPicture.setPixmap(QtGui.QPixmap(resource.path('images/firmwareProgramming.jpg')).scaled(QSize(imageSize, imageSize), Qt.KeepAspectRatio))
+
         self.layout.addWidget(title)
+        self.layout.addWidget(switchesLabel)
+        self.layout.addWidget(switchesPicture)
         self.layout.addWidget(self.progressBar)
         self.layout.addWidget(self.startButton)
         self.layout.addWidget(self.stopButton)
