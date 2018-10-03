@@ -36,4 +36,4 @@ exe = EXE(pyz,
           upx=True,
           runtime_tmpdir=None,
           console=True,
-          icon='./sd_logo.ico')
+          icon='./programmer.ico')
