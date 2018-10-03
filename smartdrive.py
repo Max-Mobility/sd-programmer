@@ -39,6 +39,13 @@ class SmartDrive(QObject):
         self.firmwareState = ''
         self.bootloaderProcess = None
 
+    @staticmethod
+    def versionByteToString(v):
+        if v >= 0xFF or v <= 0x00:
+            return 'unknown'
+        else:
+            return '{}.{}'.format((v & 0xF0) >> 4, v & 0x0F)
+
     @pyqtSlot(str)
     def onPortSelected(self, portName):
         self.portName = portName
@@ -46,7 +53,9 @@ class SmartDrive(QObject):
     @pyqtSlot(str)
     def onFirmwareFileSelected(self, fwFileName):
         self.fw = None
-
+        self.version = 'unknown'
+        self.crc = 'unknown'
+        self.fwCheckSum = 0
         self.fwFileName = fwFileName
         if fwFileName is None:
             msg = "Couldn't open firmware file '{}'!\n{}".format(self.fwFileName, error)
@@ -64,6 +73,9 @@ class SmartDrive(QObject):
             with f:
                 fileData = bytearray(f.read())
         self.fw = fileData
+        self.version = self.versionByteToString(self.fw[0])
+        self.fwCheckSum = self.fw[4:8]
+        self.crc = ''.join('{:02x}'.format(x) for x in self.fwCheckSum)
 
     def checkPort(self):
         '''Returns true if we have a valid port, false otherwise'''

@@ -106,15 +106,22 @@ class Programmer(QMainWindow):
         self.toolbar_init()
         self.toolbar_create('toolbar1')
         self.toolbar_add_action('toolbar1', exitAction)
+
         self.toolbar_add_separator('toolbar1')
         self.toolbar_add_action('toolbar1', refreshAction)
-        self.toolbar_add_widget('toolbar1', QLabel('Serial Port: '))
+        self.toolbar_add_widget('toolbar1', QLabel(' Serial Port: '))
         self.toolbar_add_widget('toolbar1', self.port_selector)
+
         self.toolbar_add_separator('toolbar1')
         self.toolbar_add_action('toolbar1', openAction)
-        self.toolbar_add_widget('toolbar1', QLabel('MX2+ Firmware: '))
-        self.firmwareLabel = QLabel()
+
+        self.toolbar_add_widget('toolbar1', QLabel(' MX2+ Version: '))
+        self.firmwareLabel = QLabel('<b><i>unknown</i></b>')
         self.toolbar_add_widget('toolbar1', self.firmwareLabel)
+
+        self.toolbar_add_widget('toolbar1', QLabel(' crc: '))
+        self.crcLabel = QLabel('<b><i>unknown</i></b>')
+        self.toolbar_add_widget('toolbar1', self.crcLabel)
 
         # main UI
         self.startPage = pages.StartPage()
@@ -197,8 +204,8 @@ class Programmer(QMainWindow):
             options=QFileDialog.Options()
         )
         self.smartDrive.onFirmwareFileSelected(self.fwFileName)
-        labelText = "<b><i>{}</i></b>".format(QFileInfo(QFile(self.fwFileName)).fileName())
-        self.firmwareLabel.setText(labelText)
+        self.firmwareLabel.setText('<b><i>{}</i></b>'.format(self.smartDrive.version))
+        self.crcLabel.setText('<b><i>{}</i></b>'.format(self.smartDrive.crc))
 
     # functions for controlling the programming
     def stop(self):
