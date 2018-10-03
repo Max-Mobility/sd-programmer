@@ -2,7 +2,7 @@ import glob
 import sys
 import serial
 from PyQt5 import QtGui
-from PyQt5.QtWidgets import (QWidget, QPushButton, QLabel, QComboBox, QApplication, QMainWindow, QStyleFactory, QDesktopWidget, QMessageBox, QErrorMessage, QSplitter)
+from PyQt5.QtWidgets import (QWidget, QPushButton, QLabel, QComboBox, QApplication, QMainWindow, QStyleFactory, QDesktopWidget, QMessageBox, QErrorMessage, QSplitter, QScrollArea)
 from PyQt5.QtCore import QProcess, QBasicTimer, Qt, QObject, QRunnable, QThread, QThreadPool, pyqtSignal
 
 import resource
@@ -107,7 +107,10 @@ class Programmer(QMainWindow):
         self.pager.addPage(self.endPage)
 
         # main controls
-        self.setCentralWidget(self.pager)
+        self.scrollArea = QScrollArea(self)
+        self.scrollArea.setWidget(self.pager)
+        self.scrollArea.setWidgetResizable(True)
+        self.setCentralWidget(self.scrollArea)
         self.setGeometry(300, 300, 800, 600)
         self.center()
         self.show()
