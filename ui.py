@@ -96,11 +96,11 @@ class Programmer(QMainWindow):
         self.toolbar_add_action('toolbar1', exitAction)
         self.toolbar_add_separator('toolbar1')
         self.toolbar_add_action('toolbar1', refreshAction)
-        self.toolbar_add_widget('toolbar1', QLabel('Serial Port:'))
+        self.toolbar_add_widget('toolbar1', QLabel('Serial Port: '))
         self.toolbar_add_widget('toolbar1', self.port_selector)
         self.toolbar_add_separator('toolbar1')
         self.toolbar_add_action('toolbar1', openAction)
-        self.toolbar_add_widget('toolbar1', QLabel('MX2+ Firmware:'))
+        self.toolbar_add_widget('toolbar1', QLabel('MX2+ Firmware: '))
         self.firmwareLabel = QLabel()
         self.toolbar_add_widget('toolbar1', self.firmwareLabel)
 
@@ -121,11 +121,14 @@ class Programmer(QMainWindow):
         self.pager.addPage(self.endPage)
 
         # main controls
+        '''
         self.scrollArea = QScrollArea(self)
         self.scrollArea.setWidget(self.pager)
         self.scrollArea.setWidgetResizable(True)
         self.setCentralWidget(self.scrollArea)
-        self.setGeometry(300, 300, 800, 600)
+        '''
+        self.setCentralWidget(self.pager)
+        #self.setGeometry(300, 300, 800, 600)
         self.center()
         self.show()
 
