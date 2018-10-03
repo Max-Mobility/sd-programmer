@@ -19,6 +19,7 @@ a = Analysis(['program.py'],
 a.datas += Tree('./exes', prefix='exes/')
 a.datas += Tree('./firmwares', prefix='firmwares/')
 a.datas += Tree('./icons', prefix='icons/')
+a.datas += Tree('./images', prefix='images/')
 
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
