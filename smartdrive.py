@@ -134,9 +134,13 @@ class SmartDrive(QObject):
         if code == 0:
             self.bootloaderStatus.emit(100, 'Bootloader complete')
             self.bootloaderFinished.emit()
-        else:
+        elif self.isProgramming:
+            self.bootloaderStatus.emit(0, 'Bootloader failed.')
             self.bootloaderFailed.emit("Bootloader failed: {}: {}".format(code, status))
+        else:
+            self.bootloaderStatus.emit(0, 'Bootloader stopped.')
         self.bootloaderProcess = None
+        self.isProgramming = False
 
     def parseLPC21ISPOutput(self):
         data = self.lpc21ispOutput
@@ -153,8 +157,8 @@ class SmartDrive(QObject):
 
     @pyqtSlot()
     def stop(self):
-        self.stopSignal.emit()
         self.isProgramming = False
+        self.stopSignal.emit()
 
     @pyqtSlot()
     def programFirmware(self):

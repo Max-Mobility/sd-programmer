@@ -139,6 +139,7 @@ class Programmer(QMainWindow):
         #self.setGeometry(300, 300, 800, 600)
         self.center()
         self.show()
+        self.setFixedSize(self.size())
 
     def initSD(self):
         # manage the smartdrive thread
