@@ -2,10 +2,12 @@ import glob
 import sys
 import serial
 from PyQt5 import QtGui
-from PyQt5.QtWidgets import (QWidget, QProgressBar, QPushButton, QLabel, QCheckBox, QComboBox, QApplication, QMainWindow, QStyleFactory, QTextEdit, QDesktopWidget, QMessageBox, QErrorMessage, QVBoxLayout, QHBoxLayout, QSplitter)
+from PyQt5.QtWidgets import (QWidget, QPushButton, QLabel, QComboBox, QApplication, QMainWindow, QStyleFactory, QDesktopWidget, QMessageBox, QErrorMessage, QSplitter)
 from PyQt5.QtCore import QProcess, QBasicTimer, Qt, QObject, QRunnable, QThread, QThreadPool, pyqtSignal
 
 import resource
+import pages
+from pager import Pager
 from smartdrive import SmartDrive
 
 from action import\
@@ -47,6 +49,7 @@ class Programmer(QMainWindow):
         self.thread = None
         self.smartDrive = None
         self.initUI()
+        self.initSD()
 
     def initUI(self):
         QApplication.setStyle(QStyleFactory.create('Cleanlooks'))
@@ -55,7 +58,6 @@ class Programmer(QMainWindow):
                            color: white;
                            border: black solid 1px
                            }''')
-        self.setGeometry(300, 300, 800, 600)
         self.setWindowTitle('Programmer')
 
         # Create the actions for the program
@@ -89,40 +91,50 @@ class Programmer(QMainWindow):
         self.toolbar_add_action('toolbar1', refreshAction)
 
         # main UI
-        self.pbar = QProgressBar(self)
-        self.pbar.setGeometry(0,0,100, 10)
-        # progress bar label
-        self.pLabel = QLabel("")
+        self.startPage = pages.StartPage()
+        self.bootloaderSwitchesPage = pages.BootloaderSwitchesPage()
+        self.bootloaderPage = pages.BootloaderPage()
+        self.firmwareSwitchesPage = pages.FirmwareSwitchesPage()
+        self.firmwarePage = pages.FirmwarePage()
+        self.endPage = pages.EndPage()
 
-        self.startButton = QPushButton('Start', self)
-        self.startButton.clicked.connect(self.start)
-        self.stopButton = QPushButton('Stop', self)
-        self.stopButton.clicked.connect(self.stop)
-        self.stopButton.hide()
-
-        # UI for when the user needs to flip the DIP switches
-        self.actionLabel = QLabel("")
-        self.actionLabel.hide()
-        self.actionButton = QPushButton('', self)
-        self.actionButton.clicked.connect(self.performAction)
-        self.actionButton.hide()
-
-        self.begin()
+        self.pager = Pager()
+        self.pager.addPage(self.startPage)
+        self.pager.addPage(self.bootloaderSwitchesPage)
+        self.pager.addPage(self.bootloaderPage)
+        self.pager.addPage(self.firmwareSwitchesPage)
+        self.pager.addPage(self.firmwarePage)
+        self.pager.addPage(self.endPage)
 
         # main controls
-        self.mainWidget = QWidget()
-        self.layout = QVBoxLayout()
-        self.layout.addWidget(self.pbar)
-        self.layout.addWidget(self.pLabel)
-        self.layout.addWidget(self.actionLabel)
-        self.layout.addWidget(self.actionButton)
-        self.layout.addWidget(self.startButton)
-        self.layout.addWidget(self.stopButton)
-        self.mainWidget.setLayout(self.layout)
-
-        self.setCentralWidget(self.mainWidget)
+        self.setCentralWidget(self.pager)
+        self.setGeometry(300, 300, 800, 600)
         self.center()
         self.show()
+
+    def initSD(self):
+        # manage the smartdrive thread
+        self.thread = QThread()
+        # create the smartdrive
+        self.smartDrive = SmartDrive(self.port)
+        # move the smartdrive to the thread
+        self.smartDrive.moveToThread(self.thread)
+        # wire up all the events
+        self.port_selector.activated[str].connect(self.smartDrive.onPortSelected)
+
+        self.smartDrive.bootloaderStatus.connect(self.bootloaderPage.onProgressUpdate)
+        self.smartDrive.bootloaderFailed.connect(self.bootloaderPage.onBootloaderFailed)
+        self.smartDrive.bootloaderFinished.connect(self.bootloaderPage.onBootloaderFinished)
+        self.bootloaderPage.start.connect(self.smartDrive.programBootloader)
+        self.bootloaderPage.stop.connect(self.smartDrive.stop)
+
+        self.smartDrive.firmwareStatus.connect(self.firmwarePage.onProgressUpdate)
+        self.smartDrive.firmwareFinished.connect(self.firmwarePage.onFirmwareFinished)
+        self.smartDrive.firmwareFailed.connect(self.firmwarePage.onFirmwareFailed)
+        self.firmwarePage.start.connect(self.smartDrive.programFirmware)
+        self.firmwarePage.stop.connect(self.smartDrive.stop)
+        # start the thread
+        self.thread.start()
 
     # Functions for serial port control
     def refreshPorts(self):
@@ -140,129 +152,22 @@ class Programmer(QMainWindow):
         if newPort != self.port:
             self.port = newPort
 
-    # updating the display
-    def updateProgressBar(self):
-        self.pbar.setValue((self.bootloaderPercent + self.firmwarePercent) / 2.0)
-
-    # callbacks from smartdrive programming state signals
-    def onBootloaderState(self, percent, state):
-        self.bootloaderPercent = percent
-        self.updateProgressBar()
-        self.pLabel.setText(state)
-
-    def onFirmwareState(self, percent, state):
-        self.firmwarePercent = percent
-        self.updateProgressBar()
-        self.pLabel.setText(state)
-
-    def onBootloaderFinished(self):
-        self.showAction(
-            'Set the DIP switches to Firmware Programming',
-            'Press when DIP switches are set.'
-        )
-        self.actionButton.clicked.connect(self.smartDrive.programFirmware)
-
-    def onBootloaderFailed(self, status):
-        msg = self.smartDrive.lpc21ispOutput.replace('\n','<br>')
-        QMessageBox.critical(self, 'Bootloader Programming Failure',
-                             msg, QMessageBox.Ok, QMessageBox.Ok)
-        self.stop()
-
-    def onFirmwareFailed(self, status):
-        msg = status.replace('\n','<br>')
-        QMessageBox.critical(self, 'MX2+ Firmware Programming Failure',
-                             msg, QMessageBox.Ok, QMessageBox.Ok)
-        self.stop()
-
     def onFirmwareFinished(self):
         msg = 'MX2+ firmware successfully programmed!'
         QMessageBox.information(self, 'Success', msg, QMessageBox.Ok, QMessageBox.Ok)
         self.stop()
 
     # functions for controlling the programming
-    def showAction(self, labelText, buttonText):
-        self.actionLabel.setText(labelText)
-        self.actionLabel.show()
-        self.actionButton.setText(buttonText)
-        self.actionButton.show()
-
-    def performAction(self):
-        self.actionLabel.hide()
-        self.actionButton.hide()
-
-    def hideAll(self):
-        self.pbar.hide()
-        self.pLabel.hide()
-        self.startButton.hide()
-        self.stopButton.hide()
-        self.actionLabel.hide()
-        self.actionButton.hide()
-
     def stop(self):
-        if self.smartDrive is not None and self.smartDrive.isProgramming:
-            self.smartDrive.stop()
-        self.hideAll()
-        self.begin()
-
-    def begin(self):
-        self.hideAll()
-        self.showAction(
-            'Set the DIP switches to Bootloader Programming',
-            'Press when DIP switches are set.'
-        )
-        self.actionButton.clicked.connect(self.startAvailable)
-
-    def startAvailable(self):
-        self.hideAll()
-        self.startButton.show()
-        self.actionButton.clicked.disconnect(self.startAvailable)
+        self.smartDrive.stop()
+        self.thread.quit()
+        self.thread.wait()
 
     def start(self):
         if self.port is None:
             err_dialog = QErrorMessage(self)
             err_dialog.showMessage('You must select a valid serial port!')
             return
-        # reset all progrees and update the progress bar
-        self.bootloaderPercent = 0
-        self.firmwarePercent = 0
-        self.updateProgressBar()
-        # since we've started, hide the start button and show the stop button
-        self.hideAll()
-        self.stopButton.show()
-        self.pbar.show()
-        self.pLabel.show()
-        # manage the smartdrive thread
-        if self.thread is not None:
-            self.thread.quit()
-            self.thread.wait()
-        self.thread = QThread()
-        # open the firmware file
-        try:
-            f = open('./firmwares/MX2+.15.ota', 'rb')
-        except Exception as error:
-            print("ERROR: Couldn't open file {}".format(filename))
-            return
-        else:
-            with f:
-                fileData = bytearray(f.read())
-        # create the smartdrive
-        self.smartDrive = SmartDrive(self.port, fileData)
-        # move the smartdrive to the thread
-        self.smartDrive.moveToThread(self.thread)
-        # wire up all the events
-        self.smartDrive.bootloaderStatus.connect(self.onBootloaderState)
-        self.smartDrive.bootloaderFailed.connect(self.onBootloaderFailed)
-        self.smartDrive.bootloaderFailed.connect(self.thread.quit)
-        self.smartDrive.bootloaderFinished.connect(self.onBootloaderFinished)
-
-        self.smartDrive.firmwareStatus.connect(self.onFirmwareState)
-        self.smartDrive.firmwareFinished.connect(self.onFirmwareFinished)
-        self.smartDrive.firmwareFinished.connect(self.thread.quit)
-        self.smartDrive.firmwareFailed.connect(self.onFirmwareFailed)
-        self.smartDrive.firmwareFailed.connect(self.thread.quit)
-        self.thread.started.connect(self.smartDrive.programBootloader)
-        # start the thread
-        self.thread.start()
 
     # window functions
     def center(self):

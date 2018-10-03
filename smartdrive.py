@@ -19,20 +19,59 @@ class SmartDrive(QObject):
 
     stopSignal = pyqtSignal()
 
-    def __init__(self, port, fw, transmitDelay=0.001):
+    def __init__(self, port, fwFileName='./firmwares/MX2+.15.ota', transmitDelay=0.001):
         super().__init__()
         self.transmitDelay=transmitDelay
         self.isProgramming = False
         self.portName = port
-        self.fw = fw
+
+        # open the firmware file
+        try:
+            f = open(resource.path(fwFileName), 'rb')
+        except Exception as error:
+            print("[SmartDrive] Couldn't open file {}".format(fwFileName))
+        else:
+            with f:
+                fileData = bytearray(f.read())
+        self.fw = fileData
         self.bootloaderPercent = 0
         self.bootloaderState = ''
         self.firmwarePercent = 0
         self.firmwareState = ''
         self.bootloaderProcess = None
 
+    @pyqtSlot(str)
+    def onPortSelected(self, portName):
+        self.portName = portName
+
+    def checkPort(self):
+        '''Returns true if we have a valid port, false otherwise'''
+        if self.portName is None or len(self.portName) <= 0:
+            return False
+
+        # open the port
+        try:
+            port = serial.Serial(port=self.portName,
+                                 baudrate=38400,
+                                 bytesize=serial.EIGHTBITS,
+                                 parity=serial.PARITY_NONE,
+                                 stopbits=serial.STOPBITS_ONE,
+                                 timeout=1)
+        except Exception as error:
+            return False
+        else:
+            # close the port so lpc21isp can use it
+            port.close()
+        return True
+
     @pyqtSlot()
     def programBootloader(self):
+        if not self.checkPort():
+            self.bootloaderFailed.emit(
+                "Couldn't open serial port '{}'".format(self.portName)
+            )
+            return
+
         self.isProgramming = True
         self.lpc21ispOutput = ''
         self.bootloaderPercent = 0
@@ -98,6 +137,12 @@ class SmartDrive(QObject):
 
     @pyqtSlot()
     def programFirmware(self):
+        if not self.checkPort():
+            self.firmwareFailed.emit(
+                "Couldn't open serial port '{}'".format(self.portName)
+            )
+            return
+
         # init variables
         self.firmwarePercent = 0
         self.firmwareState = ''
@@ -105,17 +150,12 @@ class SmartDrive(QObject):
         haveRecvReady = False
         if not self.isProgramming:
             return
-        # open the port
-        try:
-            port = serial.Serial(port=self.portName,
-                                 baudrate=115200,
-                                 bytesize=serial.EIGHTBITS,
-                                 parity=serial.PARITY_NONE,
-                                 stopbits=serial.STOPBITS_ONE,
-                                 timeout=1)
-        except Exception as error:
-            self.firmwareFailed.emit("Couldn't open serial port {}: {}".format(self.portName, error))
-            return
+        port = serial.Serial(port=self.portName,
+                             baudrate=115200,
+                             bytesize=serial.EIGHTBITS,
+                             parity=serial.PARITY_NONE,
+                             stopbits=serial.STOPBITS_ONE,
+                             timeout=1)
 
         # wait for ready
         self.firmwareStatus.emit(0, 'Waiting for Bootloader Ready')
