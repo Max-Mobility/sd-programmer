@@ -5,8 +5,6 @@ from PyQt5.QtCore import pyqtSignal, pyqtSlot, QSize, Qt
 import resource
 from progress import ProgressBar
 
-imageSize = 300
-
 class BasePage(QWidget):
     finished = pyqtSignal()
 
@@ -32,10 +30,10 @@ class StartPage(BasePage):
 
         title = QLabel("Welcome to SmartDrive MX2+ Programming")
         picture = QLabel(self)
-        picture.setPixmap(QtGui.QPixmap(resource.path('images/mx2+.jpg')).scaled(QSize(imageSize, imageSize), Qt.KeepAspectRatio))
+        picture.setPixmap(QtGui.QPixmap(resource.path('images/mx2+.jpg')).scaled(self.size(), Qt.KeepAspectRatio))
         cableLabel = QLabel("Plug in the programming cables to the SmartDrive as shown below.")
         cablePicture = QLabel(self)
-        cablePicture.setPixmap(QtGui.QPixmap(resource.path('images/cable.jpg')).scaled(QSize(imageSize, imageSize), Qt.KeepAspectRatio))
+        cablePicture.setPixmap(QtGui.QPixmap(resource.path('images/cable.jpg')).scaled(self.size(), Qt.KeepAspectRatio))
 
         self.layout.addWidget(title)
         self.layout.addWidget(picture)
@@ -57,7 +55,7 @@ class BootloaderPage(BasePage):
         title = QLabel("Programming Bootloader")
         switchesLabel = QLabel("Set the MX2+ DIP switches for bootloader programming as shown below.")
         switchesPicture = QLabel(self)
-        switchesPicture.setPixmap(QtGui.QPixmap(resource.path('images/bootloaderProgramming.jpg')).scaled(QSize(imageSize, imageSize), Qt.KeepAspectRatio))
+        switchesPicture.setPixmap(QtGui.QPixmap(resource.path('images/bootloaderProgramming.jpg')).scaled(self.size(), Qt.KeepAspectRatio))
 
         self.progressBar = ProgressBar()
         self.startButton = QPushButton("Start")
@@ -131,7 +129,7 @@ class FirmwarePage(BasePage):
 
         switchesLabel = QLabel("Set the MX2+ DIP switches for firmware programming as shown below.")
         switchesPicture = QLabel(self)
-        switchesPicture.setPixmap(QtGui.QPixmap(resource.path('images/firmwareProgramming.jpg')).scaled(QSize(imageSize, imageSize), Qt.KeepAspectRatio))
+        switchesPicture.setPixmap(QtGui.QPixmap(resource.path('images/firmwareProgramming.jpg')).scaled(self.size(), Qt.KeepAspectRatio))
 
         self.layout.addWidget(title)
         self.layout.addWidget(switchesLabel)
@@ -177,7 +175,7 @@ class EndPage(BasePage):
 
         title = QLabel("Set the MX2+ DIP switches for running the firmware as shown below.")
         picture = QLabel(self)
-        picture.setPixmap(QtGui.QPixmap(resource.path('images/runMX2+.jpg')).scaled(QSize(imageSize, imageSize), Qt.KeepAspectRatio))
+        picture.setPixmap(QtGui.QPixmap(resource.path('images/runMX2+.jpg')).scaled(self.size(), Qt.KeepAspectRatio))
 
         self.layout.addWidget(title)
         self.layout.addWidget(picture)
