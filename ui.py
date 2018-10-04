@@ -158,6 +158,8 @@ class Programmer(QMainWindow):
         # wire up all the events
         self.port_selector.activated[str].connect(self.smartDrive.onPortSelected)
 
+        self.smartDrive.invalidFirmware.connect(self.onInvalidFirmwareFile)
+
         self.smartDrive.bootloaderStatus.connect(self.bootloaderPage.onProgressUpdate)
         self.smartDrive.bootloaderFailed.connect(self.bootloaderPage.onBootloaderFailed)
         self.smartDrive.bootloaderFinished.connect(self.bootloaderPage.onBootloaderFinished)
@@ -190,22 +192,25 @@ class Programmer(QMainWindow):
         if newPort != self.port:
             self.port = newPort
 
-    def invalidFirmwareFile(self, err):
-        msg = err.replace('\n', '<br>')
-        QMessageBox.critical(self, 'Bad Firmware File', msg, QMessageBox.Ok, QMessageBox.Ok)
-
     # functions for selecting the MX2+ firmware file
+    def onInvalidFirmwareFile(self, err):
+        QMessageBox.critical(
+            self, 'OTA File Error', err.replace('\n', '<br>'),
+            QMessageBox.Ok, QMessageBox.Ok)
+
     def onOpenFirmwareFile(self):
-        self.fwFileName, _ = QFileDialog.getOpenFileName(
+        fname, _ = QFileDialog.getOpenFileName(
             self,
             'Select MX2+ Firmware OTA File',
             '',
             'OTA Files (*.ota)',
             options=QFileDialog.Options()
         )
-        self.smartDrive.onFirmwareFileSelected(self.fwFileName)
-        self.firmwareLabel.setText('<b><i>{}</i></b>'.format(self.smartDrive.version))
-        self.crcLabel.setText('<b><i>{}</i></b>'.format(self.smartDrive.crc))
+        if fname is not None and len(fname) > 0:
+            self.fwFileName = fname
+            self.smartDrive.onFirmwareFileSelected(self.fwFileName)
+            self.firmwareLabel.setText('<b><i>{}</i></b>'.format(self.smartDrive.version))
+            self.crcLabel.setText('<b><i>{}</i></b>'.format(self.smartDrive.crc))
 
     # functions for controlling the programming
     def stop(self):

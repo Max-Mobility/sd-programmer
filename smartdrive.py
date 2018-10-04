@@ -40,7 +40,8 @@ class SmartDrive(QObject):
         self.bootloaderProcess = None
 
     @staticmethod
-    def versionByteToString(v):
+    def versionBytesToString(vBytes):
+        v = sum(vBytes)
         if v >= 0xFF or v <= 0x00:
             return 'unknown'
         else:
@@ -57,8 +58,8 @@ class SmartDrive(QObject):
         self.crc = 'unknown'
         self.fwCheckSum = 0
         self.fwFileName = fwFileName
-        if fwFileName is None:
-            msg = "Couldn't open firmware file '{}'!\n{}".format(self.fwFileName, error)
+        if fwFileName is None or len(fwFileName) == 0:
+            msg = "Please select a MX2+ OTA file!"
             self.invalidFirmware.emit(msg)
             return
 
@@ -72,10 +73,16 @@ class SmartDrive(QObject):
         else:
             with f:
                 fileData = bytearray(f.read())
-        self.fw = fileData
-        self.version = self.versionByteToString(self.fw[0])
-        self.fwCheckSum = self.fw[4:8]
-        self.crc = ''.join('{:02x}'.format(x) for x in self.fwCheckSum)
+        self.version = self.versionBytesToString(fileData[0:4])
+        if self.version != 'unknown':
+            self.fw = fileData
+            self.fwCheckSum = self.fw[4:8]
+            self.crc = ''.join('{:02x}'.format(x) for x in self.fwCheckSum)
+        else:
+            msg = "Invalid OTA file '{}'!\nPlease select a valid MX2+ OTA file!".format(
+                self.fwFileName
+            )
+            self.invalidFirmware.emit(msg)
 
     def checkPort(self):
         '''Returns true if we have a valid port, false otherwise'''
