@@ -75,6 +75,11 @@ class BootloaderPage(BasePage):
         self.layout.addWidget(self.startButton)
         self.layout.addWidget(self.stopButton)
 
+    @pyqtSlot()
+    def reset(self):
+        self.onStop()
+        self.nextEnabled = False
+
     @pyqtSlot(str)
     def onBootloaderFailed(self, status):
         msg = status.replace('\n','<br>')
@@ -140,6 +145,11 @@ class FirmwarePage(BasePage):
         self.layout.addWidget(self.progressBar)
         self.layout.addWidget(self.startButton)
         self.layout.addWidget(self.stopButton)
+
+    @pyqtSlot()
+    def reset(self):
+        self.onStop()
+        self.nextEnabled = False
 
     @pyqtSlot(str)
     def onFirmwareFailed(self, status):

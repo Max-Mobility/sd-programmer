@@ -173,6 +173,9 @@ class Programmer(QMainWindow):
         self.firmwarePage.start.connect(self.smartDrive.programFirmware)
         self.firmwarePage.stop.connect(self.smartDrive.stop)
         self.firmwarePage.finished.connect(self.pager.onNext)
+
+        self.endPage.finished.connect(self.bootloaderPage.reset)
+        self.endPage.finished.connect(self.firmwarePage.reset)
         # start the thread
         self.thread.start()
 
