@@ -24,7 +24,7 @@ class BasePage(QWidget):
         pass
 
     def getPictureSize(self):
-        return self.size() * 0.9
+        return self.size()
 
 class StartPage(BasePage):
     def __init__(self, parent=None):
@@ -32,14 +32,14 @@ class StartPage(BasePage):
         self.previousEnabled = False
 
         title = QLabel("Welcome to SmartDrive MX2+ Programming")
-        self.picture = QLabel(self)
-        self.picture.setPixmap(QtGui.QPixmap(resource.path('images/mx2+.jpg')).scaled(self.getPictureSize(), Qt.KeepAspectRatio))
+        #self.picture = QLabel(self)
+        #self.picture.setPixmap(QtGui.QPixmap(resource.path('images/mx2+.jpg')).scaled(self.getPictureSize(), Qt.KeepAspectRatio))
         cableLabel = QLabel("Plug in the programming cables to the SmartDrive as shown below.")
         self.cablePicture = QLabel(self)
         self.cablePicture.setPixmap(QtGui.QPixmap(resource.path('images/cable.jpg')).scaled(self.getPictureSize(), Qt.KeepAspectRatio))
 
         self.layout.addWidget(title)
-        self.layout.addWidget(self.picture)
+        #self.layout.addWidget(self.picture)
         self.layout.addWidget(cableLabel)
         self.layout.addWidget(self.cablePicture)
 
