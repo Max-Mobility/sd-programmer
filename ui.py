@@ -54,11 +54,8 @@ class Programmer(QMainWindow):
 
     def initUI(self):
         QApplication.setStyle(QStyleFactory.create('Cleanlooks'))
-        self.setStyleSheet('''QToolTip {
-                           background-color: black;
-                           color: white;
-                           border: black solid 1px
-                           }''')
+
+        self.setStyleSheet("QLabel {font: 15pt}")
         self.setWindowTitle('Programmer')
 
         # Create the actions for the program
@@ -143,7 +140,7 @@ class Programmer(QMainWindow):
         self.setCentralWidget(self.scrollArea)
         '''
         self.setCentralWidget(self.pager)
-        self.setGeometry(0, 0, 800, 600)
+        self.setGeometry(0, 0, 1200, 1000)
         self.center()
         self.show()
         #self.setFixedSize(self.size())

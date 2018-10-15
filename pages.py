@@ -16,6 +16,8 @@ class BasePage(QWidget):
         self.layout.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.setSizePolicy(QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored))
 
+        self.setStyleSheet("QLabel {font: 20pt}")
+
     @pyqtSlot()
     def onEnter(self):
         pass
@@ -35,7 +37,8 @@ class StartPage(BasePage):
         self.pixMap = QtGui.QPixmap(resource.path('images/cable.jpg'))
 
         title = QLabel("Welcome to SmartDrive MX2+ Programming")
-        cableLabel = QLabel("Plug in the programming cables to the SmartDrive as shown below.")
+        cableLabel = QLabel("Plug in the programming cables to the SmartDrive as shown below.\nMake sure the SmartDrive is OFF.")
+        cableLabel.setWordWrap(True)
         self.cablePicture = QLabel(self)
         self.cablePicture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
 
@@ -64,7 +67,8 @@ class BootloaderPage(BasePage):
         self.nextEnabled = False
 
         title = QLabel("Programming Bootloader")
-        switchesLabel = QLabel("Set the MX2+ DIP switches for bootloader programming as shown below.")
+        switchesLabel = QLabel("Set the MX2+ DIP switches for bootloader programming as shown below.\nThen power-cycle the SmartDrive.")
+        switchesLabel.setWordWrap(True)
         self.pixMap = QtGui.QPixmap(resource.path('images/bootloaderProgramming.jpg'))
 
         self.switchesPicture = QLabel(self)
@@ -155,7 +159,8 @@ class FirmwarePage(BasePage):
         self.stopButton.clicked.connect(self.onStop)
         self.stopButton.hide()
 
-        switchesLabel = QLabel("Set the MX2+ DIP switches for firmware programming as shown below.")
+        switchesLabel = QLabel("Set the MX2+ DIP switches for firmware programming as shown below.\nThen power-cycle the SmartDrive.")
+        switchesLabel.setWordWrap(True)
         self.switchesPicture = QLabel(self)
         self.switchesPicture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
 
@@ -216,7 +221,8 @@ class EndPage(BasePage):
 
         self.pixMap = QtGui.QPixmap(resource.path('images/runMX2+.jpg'))
 
-        title = QLabel("Set the MX2+ DIP switches for running the firmware as shown below.")
+        title = QLabel("Set the MX2+ DIP switches for running the firmware as shown below. \nThen power-cycle the SmartDrive.")
+        title.setWordWrap(True)
         self.picture = QLabel(self)
         self.picture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
 
