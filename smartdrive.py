@@ -116,6 +116,7 @@ class SmartDrive(QObject):
         self.lpc21ispOutput = ''
         self.bootloaderPercent = 0
         self.bootloaderState = ''
+        self.bootloaderStatus.emit(0, '')
 
         # lpc21isp process
         self.bootloaderProcess = QProcess()
@@ -195,6 +196,8 @@ class SmartDrive(QObject):
         self.isProgramming = True
         self.firmwarePercent = 0
         self.firmwareState = ''
+        self.firmwareStatus.emit(0, '')
+
         size = len(self.fw)
         haveRecvReady = False
         port = serial.Serial(port=self.portName,

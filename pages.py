@@ -100,6 +100,7 @@ class BootloaderPage(BasePage):
     @pyqtSlot()
     def reset(self):
         self.onStop()
+        self.progressBar.setProgress(0, '')
         self.nextEnabled = False
 
     @pyqtSlot(str)
@@ -182,6 +183,7 @@ class FirmwarePage(BasePage):
     @pyqtSlot()
     def reset(self):
         self.onStop()
+        self.progressBar.setProgress(0, '')
         self.nextEnabled = False
 
     @pyqtSlot(str)
@@ -230,7 +232,7 @@ class EndPage(BasePage):
         self.layout.addWidget(self.picture)
 
     def resizeEvent(self, event):
-        self.layout.indexOf(self.picture)
+        i = self.layout.indexOf(self.picture)
         self.layout.removeWidget(self.picture)
         self.picture.setParent(None)
         self.picture = QLabel(self)

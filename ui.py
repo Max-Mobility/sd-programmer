@@ -55,7 +55,7 @@ class Programmer(QMainWindow):
     def initUI(self):
         QApplication.setStyle(QStyleFactory.create('Cleanlooks'))
 
-        self.setStyleSheet("QLabel {font: 15pt}")
+        self.setStyleSheet("QLabel {font: 15pt} QPushButton {font: 15pt}")
         self.setWindowTitle('Programmer')
 
         # Create the actions for the program
