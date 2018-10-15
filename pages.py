@@ -1,5 +1,5 @@
 from PyQt5 import QtGui
-from PyQt5.QtWidgets import (QWidget, QPushButton, QLabel, QVBoxLayout, QVBoxLayout, QMessageBox, QErrorMessage, QScrollArea)
+from PyQt5.QtWidgets import (QWidget, QPushButton, QLabel, QVBoxLayout, QVBoxLayout, QMessageBox, QErrorMessage, QScrollArea, QSizePolicy)
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QSize, Qt
 
 import resource
@@ -14,6 +14,7 @@ class BasePage(QWidget):
         self.previousEnabled = True
         self.layout = QVBoxLayout(self)
         self.layout.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self.setSizePolicy(QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored))
 
     @pyqtSlot()
     def onEnter(self):
@@ -24,28 +25,35 @@ class BasePage(QWidget):
         pass
 
     def getPictureSize(self):
-        return self.size()
+        return self.size() * 0.9
 
 class StartPage(BasePage):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.previousEnabled = False
 
+        self.pixMap = QtGui.QPixmap(resource.path('images/cable.jpg'))
+
         title = QLabel("Welcome to SmartDrive MX2+ Programming")
-        #self.picture = QLabel(self)
-        #self.picture.setPixmap(QtGui.QPixmap(resource.path('images/mx2+.jpg')).scaled(self.getPictureSize(), Qt.KeepAspectRatio))
         cableLabel = QLabel("Plug in the programming cables to the SmartDrive as shown below.")
         self.cablePicture = QLabel(self)
-        self.cablePicture.setPixmap(QtGui.QPixmap(resource.path('images/cable.jpg')).scaled(self.getPictureSize(), Qt.KeepAspectRatio))
+        self.cablePicture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
 
         self.layout.addWidget(title)
-        #self.layout.addWidget(self.picture)
         self.layout.addWidget(cableLabel)
         self.layout.addWidget(self.cablePicture)
 
     @pyqtSlot()
     def onEnter(self):
         super().finished.emit()
+
+    def resizeEvent(self, event):
+        i = self.layout.indexOf(self.cablePicture)
+        self.layout.removeWidget(self.cablePicture)
+        self.cablePicture.setParent(None)
+        self.cablePicture = QLabel(self)
+        self.cablePicture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
+        self.layout.insertWidget(i, self.cablePicture)
 
 class BootloaderPage(BasePage):
     start = pyqtSignal()
@@ -57,8 +65,10 @@ class BootloaderPage(BasePage):
 
         title = QLabel("Programming Bootloader")
         switchesLabel = QLabel("Set the MX2+ DIP switches for bootloader programming as shown below.")
+        self.pixMap = QtGui.QPixmap(resource.path('images/bootloaderProgramming.jpg'))
+
         self.switchesPicture = QLabel(self)
-        self.switchesPicture.setPixmap(QtGui.QPixmap(resource.path('images/bootloaderProgramming.jpg')).scaled(self.getPictureSize(), Qt.KeepAspectRatio))
+        self.switchesPicture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
 
         self.progressBar = ProgressBar()
         self.startButton = QPushButton("Start")
@@ -74,6 +84,14 @@ class BootloaderPage(BasePage):
         self.layout.addWidget(self.progressBar)
         self.layout.addWidget(self.startButton)
         self.layout.addWidget(self.stopButton)
+
+    def resizeEvent(self, event):
+        i = self.layout.indexOf(self.switchesPicture)
+        self.layout.removeWidget(self.switchesPicture)
+        self.switchesPicture.setParent(None)
+        self.switchesPicture = QLabel(self)
+        self.switchesPicture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
+        self.layout.insertWidget(i, self.switchesPicture)
 
     @pyqtSlot()
     def reset(self):
@@ -126,6 +144,8 @@ class FirmwarePage(BasePage):
         super().__init__(parent=parent)
         self.nextEnabled = False
 
+        self.pixMap = QtGui.QPixmap(resource.path('images/firmwareProgramming.jpg'))
+
         title = QLabel("Programming Firmware")
         self.progressBar = ProgressBar()
         self.startButton = QPushButton("Start")
@@ -137,7 +157,7 @@ class FirmwarePage(BasePage):
 
         switchesLabel = QLabel("Set the MX2+ DIP switches for firmware programming as shown below.")
         self.switchesPicture = QLabel(self)
-        self.switchesPicture.setPixmap(QtGui.QPixmap(resource.path('images/firmwareProgramming.jpg')).scaled(self.getPictureSize(), Qt.KeepAspectRatio))
+        self.switchesPicture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
 
         self.layout.addWidget(title)
         self.layout.addWidget(switchesLabel)
@@ -145,6 +165,14 @@ class FirmwarePage(BasePage):
         self.layout.addWidget(self.progressBar)
         self.layout.addWidget(self.startButton)
         self.layout.addWidget(self.stopButton)
+
+    def resizeEvent(self, event):
+        i = self.layout.indexOf(self.switchesPicture)
+        self.layout.removeWidget(self.switchesPicture)
+        self.switchesPicture.setParent(None)
+        self.switchesPicture = QLabel(self)
+        self.switchesPicture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
+        self.layout.insertWidget(i, self.switchesPicture)
 
     @pyqtSlot()
     def reset(self):
@@ -186,12 +214,22 @@ class EndPage(BasePage):
         super().__init__(parent=parent)
         self.nextEnabled = False
 
+        self.pixMap = QtGui.QPixmap(resource.path('images/runMX2+.jpg'))
+
         title = QLabel("Set the MX2+ DIP switches for running the firmware as shown below.")
         self.picture = QLabel(self)
-        self.picture.setPixmap(QtGui.QPixmap(resource.path('images/runMX2+.jpg')).scaled(self.getPictureSize(), Qt.KeepAspectRatio))
+        self.picture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
 
         self.layout.addWidget(title)
         self.layout.addWidget(self.picture)
+
+    def resizeEvent(self, event):
+        self.layout.indexOf(self.picture)
+        self.layout.removeWidget(self.picture)
+        self.picture.setParent(None)
+        self.picture = QLabel(self)
+        self.picture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
+        self.layout.insertWidget(i, self.picture)
 
     @pyqtSlot()
     def onEnter(self):
