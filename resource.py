@@ -22,15 +22,15 @@ def path(relative_path):
 def open(path):
     command = ''
     if sys.platform.startswith('win'):
-        command = 'start'
+        command = ''
         path = '"' + path + '"'
     elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
-        command = 'open'
+        command = 'open '
     elif sys.platform.startswith('darwin'):
-        command = 'open'
+        command = 'open '
     else:
         raise EnvironmentError('Unsupported platform')
 
-    os.system(command + ' ' + path)
+    os.system(command + path)
 
 
