@@ -10,6 +10,7 @@ class BasePage(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
+        self._pager = None
         self.nextEnabled = True
         self.previousEnabled = True
         self.layout = QVBoxLayout(self)
@@ -18,16 +19,30 @@ class BasePage(QWidget):
 
         self.setStyleSheet("QLabel {font: 20pt}")
 
+        self.labels = []
+
     @pyqtSlot()
     def onEnter(self):
         pass
+
+    def setPager(self, pager):
+        self._pager = pager
+
+    def getButtonHeight(self):
+        if self._pager is not None:
+            return self._pager.getButtonHeight()
+        else:
+            return 100
 
     @pyqtSlot()
     def onExit(self):
         pass
 
     def getPictureSize(self):
-        return self.size() * 0.9
+        s = self.size() - QSize(0, self.getButtonHeight())
+        for l in self.labels:
+            s -= QSize(0, l.size().height())
+        return QSize(max(400, s.width()), max(400, s.height()))
 
 class StartPage(BasePage):
     def __init__(self, parent=None):
@@ -39,8 +54,10 @@ class StartPage(BasePage):
         title = QLabel("Welcome to SmartDrive MX2+ Programming")
         cableLabel = QLabel("Plug in the programming cables to the SmartDrive as shown below.\nMake sure the SmartDrive is OFF.")
         cableLabel.setWordWrap(True)
+        self.labels = [title, cableLabel]
         self.cablePicture = QLabel(self)
-        self.cablePicture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
+        #self.cablePicture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
+        self.cablePicture.setPixmap(self.pixMap.scaledToHeight(self.getPictureSize().height()))
 
         self.layout.addWidget(title)
         self.layout.addWidget(cableLabel)
@@ -55,7 +72,8 @@ class StartPage(BasePage):
         self.layout.removeWidget(self.cablePicture)
         self.cablePicture.setParent(None)
         self.cablePicture = QLabel(self)
-        self.cablePicture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
+        #self.cablePicture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
+        self.cablePicture.setPixmap(self.pixMap.scaledToHeight(self.getPictureSize().height()))
         self.layout.insertWidget(i, self.cablePicture)
 
 class BootloaderPage(BasePage):
@@ -71,9 +89,6 @@ class BootloaderPage(BasePage):
         switchesLabel.setWordWrap(True)
         self.pixMap = QtGui.QPixmap(resource.path('images/bootloaderProgramming.jpg'))
 
-        self.switchesPicture = QLabel(self)
-        self.switchesPicture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
-
         self.progressBar = ProgressBar()
         self.startButton = QPushButton("Start")
         self.startButton.clicked.connect(self.onStart)
@@ -81,6 +96,11 @@ class BootloaderPage(BasePage):
         self.stopButton = QPushButton("Stop")
         self.stopButton.clicked.connect(self.onStop)
         self.stopButton.hide()
+
+        self.labels = [title, switchesLabel, self.progressBar, self.startButton, self.stopButton]
+
+        self.switchesPicture = QLabel(self)
+        self.switchesPicture.setPixmap(self.pixMap.scaledToHeight(self.getPictureSize().height()))
 
         self.layout.addWidget(title)
         self.layout.addWidget(switchesLabel)
@@ -94,7 +114,7 @@ class BootloaderPage(BasePage):
         self.layout.removeWidget(self.switchesPicture)
         self.switchesPicture.setParent(None)
         self.switchesPicture = QLabel(self)
-        self.switchesPicture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
+        self.switchesPicture.setPixmap(self.pixMap.scaledToHeight(self.getPictureSize().height()))
         self.layout.insertWidget(i, self.switchesPicture)
 
     @pyqtSlot()
@@ -162,8 +182,11 @@ class FirmwarePage(BasePage):
 
         switchesLabel = QLabel("Set the MX2+ DIP switches for firmware programming as shown below.\nThen power-cycle the SmartDrive.")
         switchesLabel.setWordWrap(True)
+
+        self.labels = [title, self.progressBar, self.startButton, self.stopButton]
+
         self.switchesPicture = QLabel(self)
-        self.switchesPicture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
+        self.switchesPicture.setPixmap(self.pixMap.scaledToHeight(self.getPictureSize().height()))
 
         self.layout.addWidget(title)
         self.layout.addWidget(switchesLabel)
@@ -177,7 +200,7 @@ class FirmwarePage(BasePage):
         self.layout.removeWidget(self.switchesPicture)
         self.switchesPicture.setParent(None)
         self.switchesPicture = QLabel(self)
-        self.switchesPicture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
+        self.switchesPicture.setPixmap(self.pixMap.scaledToHeight(self.getPictureSize().height()))
         self.layout.insertWidget(i, self.switchesPicture)
 
     @pyqtSlot()
@@ -225,8 +248,11 @@ class EndPage(BasePage):
 
         title = QLabel("Set the MX2+ DIP switches for running the firmware as shown below. \nThen power-cycle the SmartDrive.")
         title.setWordWrap(True)
+
+        self.labels = [title]
+
         self.picture = QLabel(self)
-        self.picture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
+        self.picture.setPixmap(self.pixMap.scaledToHeight(self.getPictureSize().height()))
 
         self.layout.addWidget(title)
         self.layout.addWidget(self.picture)
@@ -236,7 +262,7 @@ class EndPage(BasePage):
         self.layout.removeWidget(self.picture)
         self.picture.setParent(None)
         self.picture = QLabel(self)
-        self.picture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
+        self.picture.setPixmap(self.pixMap.scaledToHeight(self.getPictureSize().height()))
         self.layout.insertWidget(i, self.picture)
 
     @pyqtSlot()

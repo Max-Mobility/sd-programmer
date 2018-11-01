@@ -21,13 +21,13 @@ class Pager(QWidget):
         self.previousButton = QPushButton("Previous")
         self.previousButton.clicked.connect(self.onPrevious)
         self.disableControls()
-        btnLayout = QHBoxLayout()
-        btnLayout.addWidget(self.previousButton)
-        btnLayout.addWidget(self.nextButton)
-        btnLayout.addWidget(self.finishButton)
+        self.btnLayout = QHBoxLayout()
+        self.btnLayout.addWidget(self.previousButton)
+        self.btnLayout.addWidget(self.nextButton)
+        self.btnLayout.addWidget(self.finishButton)
 
         lay.addWidget(self.stack)
-        lay.addLayout(btnLayout)
+        lay.addLayout(self.btnLayout)
 
     # events
     @pyqtSlot()
@@ -115,8 +115,12 @@ class Pager(QWidget):
 
     # for adding widgets and controlling page
     def addPage(self, pageWidget):
+        pageWidget.setPager(self)
         self.stack.addWidget(pageWidget)
         pageWidget.finished.connect(self.onPageFinished)
+
+    def getButtonHeight(self):
+        return self.btnLayout.sizeHint().height()
 
     def clearPages(self):
         self.stack.clear()
