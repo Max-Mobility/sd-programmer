@@ -1,6 +1,7 @@
 import glob
 import sys
 import serial
+import serial.tools.list_ports
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import (QWidget, QPushButton, QLabel, QComboBox, QApplication, QMainWindow, QStyleFactory, QDesktopWidget, QMessageBox, QErrorMessage, QFileDialog, QSplitter, QScrollArea)
 from PyQt5.QtCore import QFileInfo, QFile, QProcess, QBasicTimer, Qt, QObject, QRunnable, QThread, QThreadPool, pyqtSignal
@@ -21,24 +22,27 @@ def listSerialPorts():
         :returns:
             A list of the serial ports available on the system
     """
+    portDesc = ''
     if sys.platform.startswith('win'):
-        ports = ['COM%s' % (i + 1) for i in range(256)]
+        portDesc = 'USB Serial Port'
     elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
-        # this excludes your current terminal "/dev/tty"
-        ports = glob.glob('/dev/tty[A-Za-z]*')
+        portDesc = 'TTL232R-3V3'
     elif sys.platform.startswith('darwin'):
-        ports = glob.glob('/dev/tty.*')
+        portDesc = 'TTL232R-3V3'
     else:
         raise EnvironmentError('Unsupported platform')
 
+    ports = list(serial.tools.list_ports.comports())
     result = []
-    for port in ports:
-        try:
-            s = serial.Serial(port)
-            s.close()
-            result.append(port)
-        except (OSError, serial.SerialException):
-            pass
+    for p in ports:
+        if portDesc in p.description:
+            try:
+                s = serial.Serial(p.name)
+                s.close()
+                result.append(p.name)
+            except (OSError, serial.SerialException):
+                pass
+
     return result
 
 class Programmer(QMainWindow):
