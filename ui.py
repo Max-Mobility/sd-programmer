@@ -130,12 +130,14 @@ class Programmer(QMainWindow):
         self.startPage = pages.StartPage()
         self.bootloaderPage = pages.BootloaderPage()
         self.firmwarePage = pages.FirmwarePage()
+        self.blePage = pages.BLEPage()
         self.endPage = pages.EndPage()
 
         self.pager = Pager()
         self.pager.addPage(self.startPage)
         self.pager.addPage(self.bootloaderPage)
         self.pager.addPage(self.firmwarePage)
+        self.pager.addPage(self.blePage)
         self.pager.addPage(self.endPage)
 
         # main controls
@@ -160,7 +162,7 @@ class Programmer(QMainWindow):
         # force the user to select project.bgproj file
         self.timer2 = QTimer()
         self.timer2.setSingleShot(True)
-        self.timer2.setInterval(2000)
+        self.timer2.setInterval(500)
         self.timer2.timeout.connect(self.onOpenBLEProject)
         self.timer.timeout.connect(self.timer2.start)
 
@@ -182,6 +184,8 @@ class Programmer(QMainWindow):
         self.bootloaderPage.start.connect(self.smartDrive.programBootloader)
         self.bootloaderPage.stop.connect(self.smartDrive.stop)
         self.bootloaderPage.finished.connect(self.pager.onNext)
+
+        self.blePage.begin.connect(self.onStartBle)
 
         self.smartDrive.firmwareStatus.connect(self.firmwarePage.onProgressUpdate)
         self.smartDrive.firmwareFinished.connect(self.firmwarePage.onFirmwareFinished)
@@ -212,6 +216,10 @@ class Programmer(QMainWindow):
             self.port = newPort
 
     # functions for selecting the MX2+ firmware file
+    def onStartBle(self):
+        if self.bleFileName is not None:
+            resource.open(self.bleFileName)
+
     def onInvalidFirmwareFile(self, err):
         QMessageBox.critical(
             self, 'OTA File Error', err.replace('\n', '<br>'),
