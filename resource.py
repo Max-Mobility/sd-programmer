@@ -23,6 +23,7 @@ def open(path):
     command = ''
     if sys.platform.startswith('win'):
         command = 'start'
+        path = '"' + path + '"'
     elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
         command = 'open'
     elif sys.platform.startswith('darwin'):

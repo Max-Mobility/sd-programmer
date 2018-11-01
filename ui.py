@@ -191,7 +191,7 @@ class Programmer(QMainWindow):
         # move the smartdrive to the thread
         self.smartDrive.moveToThread(self.thread)
         # wire up all the events
-        self.port_selector.activated[str].connect(self.smartDrive.onPortSelected)
+        self.port_selector.currentIndexChanged[str].connect(self.smartDrive.onPortSelected)
 
         self.smartDrive.invalidFirmware.connect(self.onInvalidFirmwareFile)
 
