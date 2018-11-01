@@ -153,14 +153,6 @@ class BootloaderPage(BasePage):
         self.startButton.show()
         self.stopButton.hide()
 
-class FirmwareSwitchesPage(BasePage):
-    def __init__(self, parent=None):
-        super().__init__(parent=parent)
-
-    @pyqtSlot()
-    def onEnter(self):
-        super().finished.emit()
-
 class FirmwarePage(BasePage):
     start = pyqtSignal()
     stop = pyqtSignal()
@@ -238,6 +230,40 @@ class FirmwarePage(BasePage):
         self.stop.emit()
         self.startButton.show()
         self.stopButton.hide()
+
+class BLEPage(BasePage):
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.nextEnabled = False
+
+        self.pixMap1 = QtGui.QPixmap(resource.path('images/ble.jpg'))
+
+        title = QLabel("Now program the SmartDrive Bluetooth Firmware.")
+        title.setWordWrap(True)
+
+        bleInstructions = QLabel("The program will open automatically.\nPress the 'Info' button and ensure it DOES NOT turn RED.\nThen press the 'Update' button.")
+        bleInstructions.setWordWrap(True)
+
+        self.labels = [title, bleInstructions]
+
+        self.picture = QLabel(self)
+        self.picture.setPixmap(self.pixMap.scaledToHeight(self.getPictureSize().height()))
+
+        self.layout.addWidget(title)
+        self.layout.addWidget(bleInstructions)
+        self.layout.addWidget(self.picture)
+
+    def resizeEvent(self, event):
+        i = self.layout.indexOf(self.picture)
+        self.layout.removeWidget(self.picture)
+        self.picture.setParent(None)
+        self.picture = QLabel(self)
+        self.picture.setPixmap(self.pixMap.scaledToHeight(self.getPictureSize().height()))
+        self.layout.insertWidget(i, self.picture)
+
+    @pyqtSlot()
+    def onEnter(self):
+        super().finished.emit()
 
 class EndPage(BasePage):
     def __init__(self, parent=None):

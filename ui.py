@@ -54,6 +54,7 @@ class Programmer(QMainWindow):
         self.thread = None
         self.smartDrive = None
         self.fwFileName = None
+        self.bleFileName = None
         self.initUI()
         self.initSD()
 
@@ -156,6 +157,13 @@ class Programmer(QMainWindow):
         self.timer.timeout.connect(self.onOpenFirmwareFile)
         self.timer.start(500)
 
+        # force the user to select project.bgproj file
+        self.timer2 = QTimer()
+        self.timer2.setSingleShot(True)
+        self.timer2.setInterval(2000)
+        self.timer2.timeout.connect(self.onOpenBLEProject)
+        self.timer.timeout.connect(self.timer2.start)
+
     def initSD(self):
         # manage the smartdrive thread
         self.thread = QThread()
@@ -222,6 +230,17 @@ class Programmer(QMainWindow):
             self.smartDrive.onFirmwareFileSelected(self.fwFileName)
             self.firmwareLabel.setText('<b><i>{}</i></b>'.format(self.smartDrive.version))
             self.crcLabel.setText('<b><i>{}</i></b>'.format(self.smartDrive.crc))
+
+    def onOpenBLEProject(self):
+        fname, _ = QFileDialog.getOpenFileName(
+            self,
+            'Select BLE Project File',
+            '',
+            'BGPROJ Files (*.bgproj)',
+            options=QFileDialog.Options()
+        )
+        if fname is not None and len(fname) > 0:
+            self.bleFileName = fname
 
     # functions for controlling the programming
     def stop(self):

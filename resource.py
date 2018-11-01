@@ -18,3 +18,18 @@ def path(relative_path):
     print("[RESOURCE]", relative_path)
     rPath = os.path.join(base_path, relative_path)
     return rPath
+
+def open(path):
+    command = ''
+    if sys.platform.startswith('win'):
+        command = 'start'
+    elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+        command = 'open'
+    elif sys.platform.startswith('darwin'):
+        command = 'open'
+    else:
+        raise EnvironmentError('Unsupported platform')
+
+    os.system(command + ' ' + path)
+
+
