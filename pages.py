@@ -168,7 +168,7 @@ class FirmwarePage(BasePage):
         switchesLabel = QLabel("Set the MX2+ DIP switches for firmware programming as shown below.\nThen power-cycle the SmartDrive.")
         switchesLabel.setWordWrap(True)
 
-        self.labels = [title, self.progressBar, self.startButton, self.stopButton]
+        self.labels = [title, switchesLabel, self.progressBar, self.startButton, self.stopButton]
 
         self.picture = QLabel(self)
         self.picture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
@@ -260,12 +260,16 @@ class EndPage(BasePage):
         title = QLabel("Set the MX2+ DIP switches for running the firmware as shown below. \nThen power-cycle the SmartDrive.")
         title.setWordWrap(True)
 
-        self.labels = [title]
+        note = QLabel("NOTE: if you need to limit the speed, set DIP 7 OFF. For other configuration settings, please check out the 'Help' menu of this program.")
+        note.setWordWrap(True)
+
+        self.labels = [title, note]
 
         self.picture = QLabel(self)
         self.picture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
 
         self.layout.addWidget(title)
+        self.layout.addWidget(note)
         self.layout.addWidget(self.picture)
 
     @pyqtSlot()
