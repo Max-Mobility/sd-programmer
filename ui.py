@@ -75,10 +75,15 @@ class Programmer(QMainWindow):
         refreshAction.setStatusTip('Refresh Serial Port List')
         refreshAction.triggered.connect(self.refreshPorts)
 
-        openAction = Action(resource.path('icons/toolbar/open.png'), 'Select Firmware', self)
+        openAction = Action(resource.path('icons/toolbar/open.png'), 'Select MX2+ Firmware', self)
         openAction.setStatusTip('Open MX2+ OTA File.')
         openAction.setShortcut('Ctrl+O')
         openAction.triggered.connect(self.onOpenFirmwareFile)
+
+        openBleAction = Action(resource.path('icons/toolbar/open.png'), 'Select BLE Firmware', self)
+        openBleAction.setStatusTip('Open BLE Project File.')
+        openBleAction.setShortcut('Ctrl+B')
+        openBleAction.triggered.connect(self.onOpenBLEProject)
 
         aboutAction = Action(resource.path('icons/toolbar/about.png'), 'About', self)
         aboutAction.setStatusTip('About MX2+ Programmer')
@@ -104,6 +109,7 @@ class Programmer(QMainWindow):
         self.menu_add_action('&File', exitAction)
         self.menu_add_action('&File', refreshAction)
         self.menu_add_action('&File', openAction)
+        self.menu_add_action('&File', openBleAction)
 
         self.menubar_add_menu('&Help')
         self.menu_add_action('&Help', aboutAction)
@@ -130,6 +136,12 @@ class Programmer(QMainWindow):
         self.toolbar_add_widget('toolbar1', QLabel(' crc: '))
         self.crcLabel = QLabel('<b><i>unknown</i></b>')
         self.toolbar_add_widget('toolbar1', self.crcLabel)
+
+        self.toolbar_add_separator('toolbar1')
+        self.toolbar_add_action('toolbar1', openBleAction)
+        self.toolbar_add_widget('toolbar1', QLabel(' BLE: '))
+        self.bleLabel = QLabel('<b><i>unknown</i></b>')
+        self.toolbar_add_widget('toolbar1', self.bleLabel)
 
         # main UI
         self.startPage = pages.StartPage()
@@ -254,6 +266,7 @@ class Programmer(QMainWindow):
         )
         if fname is not None and len(fname) > 0:
             self.bleFileName = fname
+            self.bleLabel.setText('<b><i>{}</i></b>'.format(self.bleFileName))
 
     # functions for controlling the programming
     def stop(self):
