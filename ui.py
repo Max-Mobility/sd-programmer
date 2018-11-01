@@ -37,10 +37,11 @@ def listSerialPorts():
     for p in ports:
         if portDesc in p.description:
             try:
-                s = serial.Serial(p.name)
+                s = serial.Serial(p.device)
                 s.close()
-                result.append(p.name)
-            except (OSError, serial.SerialException):
+                result.append(p.device)
+            except (OSError, serial.SerialException) as inst:
+                print(inst)
                 pass
 
     return result
@@ -185,12 +186,12 @@ class Programmer(QMainWindow):
         self.serial_ports = listSerialPorts()
         self.port_selector.clear()
         self.port_selector.addItems(self.serial_ports)
-        if self.port is not None and self.port in self.serial_ports:
+        if self.port is None and len(self.serial_ports):
+            self.port = self.serial_ports[0]
+        if self.port is not None:
             self.port_selector.setCurrentIndex(
                 self.serial_ports.index(self.port)
             )
-        else:
-            self.port_selector.setCurrentIndex(-1)
 
     def changePort(self, newPort):
         if newPort != self.port:
