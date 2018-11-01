@@ -4,7 +4,7 @@ import serial
 import serial.tools.list_ports
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import (QWidget, QPushButton, QLabel, QComboBox, QApplication, QMainWindow, QStyleFactory, QDesktopWidget, QMessageBox, QErrorMessage, QFileDialog, QSplitter, QScrollArea)
-from PyQt5.QtCore import QFileInfo, QFile, QProcess, QBasicTimer, Qt, QObject, QRunnable, QThread, QThreadPool, pyqtSignal
+from PyQt5.QtCore import QFileInfo, QFile, QProcess, QTimer, QBasicTimer, Qt, QObject, QRunnable, QThread, QThreadPool, pyqtSignal
 
 import resource
 import pages
@@ -149,6 +149,12 @@ class Programmer(QMainWindow):
         self.center()
         self.show()
         #self.setFixedSize(self.size())
+
+        # force the user to select OTA file
+        self.timer = QTimer()
+        self.timer.setSingleShot(True)
+        self.timer.timeout.connect(self.onOpenFirmwareFile)
+        self.timer.start(500)
 
     def initSD(self):
         # manage the smartdrive thread
