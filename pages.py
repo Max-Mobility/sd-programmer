@@ -20,6 +20,7 @@ class BasePage(QWidget):
         self.setStyleSheet("QLabel {font: 20pt}")
 
         self.labels = []
+        self.picture = None
 
     @pyqtSlot()
     def onEnter(self):
@@ -42,7 +43,17 @@ class BasePage(QWidget):
         s = self.size() - QSize(0, self.getButtonHeight())
         for l in self.labels:
             s -= QSize(0, l.size().height())
-        return QSize(max(400, s.width()), max(400, s.height()))
+        return s
+        #return QSize(max(400, s.width()), max(400, s.height()))
+
+    def resizeEvent(self, event):
+        if self.picture is not None:
+            i = self.layout.indexOf(self.picture)
+            self.layout.removeWidget(self.picture)
+            self.picture.setParent(None)
+            self.picture = QLabel(self)
+            self.picture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
+            self.layout.insertWidget(i, self.picture)
 
 class StartPage(BasePage):
     def __init__(self, parent=None):
@@ -55,26 +66,17 @@ class StartPage(BasePage):
         cableLabel = QLabel("Plug in the programming cables to the SmartDrive as shown below.\nMake sure the SmartDrive is OFF.\nRefer to the 'Help' menu for BLE setup instructions.")
         cableLabel.setWordWrap(True)
         self.labels = [title, cableLabel]
-        self.cablePicture = QLabel(self)
-        #self.cablePicture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
-        self.cablePicture.setPixmap(self.pixMap.scaledToHeight(self.getPictureSize().height()))
+
+        self.picture = QLabel(self)
+        self.picture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
 
         self.layout.addWidget(title)
         self.layout.addWidget(cableLabel)
-        self.layout.addWidget(self.cablePicture)
+        self.layout.addWidget(self.picture)
 
     @pyqtSlot()
     def onEnter(self):
         super().finished.emit()
-
-    def resizeEvent(self, event):
-        i = self.layout.indexOf(self.cablePicture)
-        self.layout.removeWidget(self.cablePicture)
-        self.cablePicture.setParent(None)
-        self.cablePicture = QLabel(self)
-        #self.cablePicture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
-        self.cablePicture.setPixmap(self.pixMap.scaledToHeight(self.getPictureSize().height()))
-        self.layout.insertWidget(i, self.cablePicture)
 
 class BootloaderPage(BasePage):
     start = pyqtSignal()
@@ -99,23 +101,15 @@ class BootloaderPage(BasePage):
 
         self.labels = [title, switchesLabel, self.progressBar, self.startButton, self.stopButton]
 
-        self.switchesPicture = QLabel(self)
-        self.switchesPicture.setPixmap(self.pixMap.scaledToHeight(self.getPictureSize().height()))
+        self.picture = QLabel(self)
+        self.picture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
 
         self.layout.addWidget(title)
         self.layout.addWidget(switchesLabel)
-        self.layout.addWidget(self.switchesPicture)
+        self.layout.addWidget(self.picture)
         self.layout.addWidget(self.progressBar)
         self.layout.addWidget(self.startButton)
         self.layout.addWidget(self.stopButton)
-
-    def resizeEvent(self, event):
-        i = self.layout.indexOf(self.switchesPicture)
-        self.layout.removeWidget(self.switchesPicture)
-        self.switchesPicture.setParent(None)
-        self.switchesPicture = QLabel(self)
-        self.switchesPicture.setPixmap(self.pixMap.scaledToHeight(self.getPictureSize().height()))
-        self.layout.insertWidget(i, self.switchesPicture)
 
     @pyqtSlot()
     def reset(self):
@@ -177,23 +171,15 @@ class FirmwarePage(BasePage):
 
         self.labels = [title, self.progressBar, self.startButton, self.stopButton]
 
-        self.switchesPicture = QLabel(self)
-        self.switchesPicture.setPixmap(self.pixMap.scaledToHeight(self.getPictureSize().height()))
+        self.picture = QLabel(self)
+        self.picture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
 
         self.layout.addWidget(title)
         self.layout.addWidget(switchesLabel)
-        self.layout.addWidget(self.switchesPicture)
+        self.layout.addWidget(self.picture)
         self.layout.addWidget(self.progressBar)
         self.layout.addWidget(self.startButton)
         self.layout.addWidget(self.stopButton)
-
-    def resizeEvent(self, event):
-        i = self.layout.indexOf(self.switchesPicture)
-        self.layout.removeWidget(self.switchesPicture)
-        self.switchesPicture.setParent(None)
-        self.switchesPicture = QLabel(self)
-        self.switchesPicture.setPixmap(self.pixMap.scaledToHeight(self.getPictureSize().height()))
-        self.layout.insertWidget(i, self.switchesPicture)
 
     @pyqtSlot()
     def reset(self):
@@ -249,10 +235,10 @@ class BLEPage(BasePage):
         self.beginButton = QPushButton("Begin")
         self.beginButton.clicked.connect(self.onBegin)
 
-        self.labels = [title, bleInstructions]
+        self.labels = [title, bleInstructions, self.beginButton]
 
         self.picture = QLabel(self)
-        self.picture.setPixmap(self.pixMap.scaledToWidth(self.getPictureSize().width()))
+        self.picture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
 
         self.layout.addWidget(title)
         self.layout.addWidget(bleInstructions)
@@ -264,14 +250,6 @@ class BLEPage(BasePage):
         self.begin.emit()
         self.nextEnabled = True
         super().finished.emit()
-
-    def resizeEvent(self, event):
-        i = self.layout.indexOf(self.picture)
-        self.layout.removeWidget(self.picture)
-        self.picture.setParent(None)
-        self.picture = QLabel(self)
-        self.picture.setPixmap(self.pixMap.scaledToWidth(self.getPictureSize().width()))
-        self.layout.insertWidget(i, self.picture)
 
 class EndPage(BasePage):
     def __init__(self, parent=None):
@@ -286,18 +264,10 @@ class EndPage(BasePage):
         self.labels = [title]
 
         self.picture = QLabel(self)
-        self.picture.setPixmap(self.pixMap.scaledToHeight(self.getPictureSize().height()))
+        self.picture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
 
         self.layout.addWidget(title)
         self.layout.addWidget(self.picture)
-
-    def resizeEvent(self, event):
-        i = self.layout.indexOf(self.picture)
-        self.layout.removeWidget(self.picture)
-        self.picture.setParent(None)
-        self.picture = QLabel(self)
-        self.picture.setPixmap(self.pixMap.scaledToHeight(self.getPictureSize().height()))
-        self.layout.insertWidget(i, self.picture)
 
     @pyqtSlot()
     def onEnter(self):
