@@ -243,7 +243,7 @@ class BLEPage(BasePage):
         title = QLabel("Now program the SmartDrive Bluetooth Firmware.")
         title.setWordWrap(True)
 
-        bleInstructions = QLabel("The program will open when you press 'Begin'.\nPress the 'Info' button and ensure it DOES NOT turn RED.\nThen press the 'Update' button.\nWhen it has finished, press 'Next'")
+        bleInstructions = QLabel("The program will open when you press 'Begin'. Press the 'Info' button and ensure it DOES NOT turn RED. Then press the 'Update' button.\nWhen it has finished, press 'Next'")
         bleInstructions.setWordWrap(True)
 
         self.beginButton = QPushButton("Begin")

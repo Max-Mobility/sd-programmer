@@ -242,7 +242,7 @@ class Programmer(QMainWindow):
     def onOpenBLEProject(self):
         fname, _ = QFileDialog.getOpenFileName(
             self,
-            'Select BLE Project File',
+            'Select SmartDrive BLE Project File',
             '',
             'BGPROJ Files (*.bgproj)',
             options=QFileDialog.Options()
