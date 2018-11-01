@@ -135,9 +135,9 @@ class Programmer(QMainWindow):
 
         self.pager = Pager()
         self.pager.addPage(self.startPage)
+        self.pager.addPage(self.blePage)
         self.pager.addPage(self.bootloaderPage)
         self.pager.addPage(self.firmwarePage)
-        self.pager.addPage(self.blePage)
         self.pager.addPage(self.endPage)
 
         # main controls

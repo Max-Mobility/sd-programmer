@@ -252,7 +252,7 @@ class BLEPage(BasePage):
         self.labels = [title, bleInstructions]
 
         self.picture = QLabel(self)
-        self.picture.setPixmap(self.pixMap.scaledToHeight(self.getPictureSize().height()))
+        self.picture.setPixmap(self.pixMap.scaledToWidth(self.getPictureSize().width()))
 
         self.layout.addWidget(title)
         self.layout.addWidget(bleInstructions)
@@ -270,7 +270,7 @@ class BLEPage(BasePage):
         self.layout.removeWidget(self.picture)
         self.picture.setParent(None)
         self.picture = QLabel(self)
-        self.picture.setPixmap(self.pixMap.scaledToHeight(self.getPictureSize().height()))
+        self.picture.setPixmap(self.pixMap.scaledToWidth(self.getPictureSize().width()))
         self.layout.insertWidget(i, self.picture)
 
 class EndPage(BasePage):
