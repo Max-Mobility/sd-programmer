@@ -43,8 +43,7 @@ class BasePage(QWidget):
         s = self.size() - QSize(0, self.getButtonHeight())
         for l in self.labels:
             s -= QSize(0, l.size().height())
-        return s
-        #return QSize(max(400, s.width()), max(400, s.height()))
+        return QSize(max(400, s.width()), max(400, s.height()))
 
     def resizeEvent(self, event):
         if self.picture is not None:
