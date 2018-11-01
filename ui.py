@@ -88,6 +88,10 @@ class Programmer(QMainWindow):
         switchInfoAction.setStatusTip('MX2+ DIP Switch Info')
         switchInfoAction.triggered.connect(self.showSwitchInfo)
 
+        bleInfoAction = Action(resource.path('icons/toolbar/info.png'), 'BLE Programmer Info', self)
+        bleInfoAction.setStatusTip('BLE Programmer Info')
+        bleInfoAction.triggered.connect(self.showBLEInfo)
+
         # Create the widgets for the program (embeddable in the
         # toolbar or elsewhere)
         self.port_selector = QComboBox(self)
@@ -104,6 +108,7 @@ class Programmer(QMainWindow):
         self.menubar_add_menu('&Help')
         self.menu_add_action('&Help', aboutAction)
         self.menu_add_action('&Help', switchInfoAction)
+        self.menu_add_action('&Help', bleInfoAction)
 
         # Set up the toolbars for the program
         self.toolbar_init()
@@ -282,6 +287,14 @@ It allows the user to select the serial port on which they've connected the Smar
         '''
         QMessageBox.information(
             self, 'DIP Switch Info', msg.replace('\n', '<br>'),
+            QMessageBox.Ok, QMessageBox.Ok)
+
+    def showBLEInfo(self):
+        msg = '''
+To program the SmartDrive bluetooth chip you must have BLE SW Update tool installed. Once it is installed, you will need to tell the tool where 'bgbuild.exe' is located on your system. To do this, press the 'BGBuild' menu button in the TOP LEFT of the BLE SW Update Tool and press 'Select manually...' - the bgbuild.exe should be in the folder 'C:\\Bluegiga\\ble-1.5.0-137\\bin'
+        '''
+        QMessageBox.information(
+            self, 'BLE Programming Info', msg.replace('\n', '<br>'),
             QMessageBox.Ok, QMessageBox.Ok)
 
     # window functions

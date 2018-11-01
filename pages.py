@@ -52,7 +52,7 @@ class StartPage(BasePage):
         self.pixMap = QtGui.QPixmap(resource.path('images/cable.jpg'))
 
         title = QLabel("Welcome to SmartDrive MX2+ Programming")
-        cableLabel = QLabel("Plug in the programming cables to the SmartDrive as shown below.\nMake sure the SmartDrive is OFF.")
+        cableLabel = QLabel("Plug in the programming cables to the SmartDrive as shown below.\nMake sure the SmartDrive is OFF.\nRefer to the 'Help' menu for BLE setup instructions.")
         cableLabel.setWordWrap(True)
         self.labels = [title, cableLabel]
         self.cablePicture = QLabel(self)
