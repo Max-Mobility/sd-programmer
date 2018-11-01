@@ -223,10 +223,12 @@ class Programmer(QMainWindow):
         self.port_selector.addItems(self.serial_ports)
         if self.port is None and len(self.serial_ports):
             self.port = self.serial_ports[0]
-        if self.port is not None:
+        if self.port is not None and len(self.serial_ports):
             self.port_selector.setCurrentIndex(
                 self.serial_ports.index(self.port)
             )
+        else:
+            self.port_selector.setCurrentIndex(-1)
 
     def changePort(self, newPort):
         if newPort != self.port:

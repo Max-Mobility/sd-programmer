@@ -87,7 +87,7 @@ class SmartDrive(QObject):
     def checkPort(self):
         '''Returns true if we have a valid port, false otherwise'''
         if self.portName is None or len(self.portName) <= 0:
-            return False
+            return False, "You must select a serial port!"
 
         # open the port
         try:
@@ -98,17 +98,18 @@ class SmartDrive(QObject):
                                  stopbits=serial.STOPBITS_ONE,
                                  timeout=1)
         except Exception as error:
-            return False
+            return False, error
         else:
             # close the port so lpc21isp can use it
             port.close()
-        return True
+        return True, None
 
     @pyqtSlot()
     def programBootloader(self):
-        if not self.checkPort():
+        goodPort, portErr = self.checkPort()
+        if not goodPort:
             self.bootloaderFailed.emit(
-                "Couldn't open serial port '{}'".format(self.portName)
+                "Couldn't open serial port: {}".format(portErr)
             )
             return
 
@@ -182,9 +183,10 @@ class SmartDrive(QObject):
 
     @pyqtSlot()
     def programFirmware(self):
-        if not self.checkPort():
+        goodPort, portErr = self.checkPort()
+        if not goodPort:
             self.firmwareFailed.emit(
-                "Couldn't open serial port '{}'".format(self.portName)
+                "Couldn't open serial port {}".format(portErr)
             )
             return
 
