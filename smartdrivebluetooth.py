@@ -199,7 +199,7 @@ class SmartDriveBluetooth(QObject):
 
     def onFirmwareDataReady(self):
         data = str(self.firmwareProcess.readAllStandardOutput(), 'utf-8')
-        self.updateOutput += data
+        self.updateOutput = data
         percent, state = self.parseUpdateOutput()
         self.status.emit(percent, state)
 
@@ -225,11 +225,10 @@ class SmartDriveBluetooth(QObject):
 
     def parseUpdateOutput(self):
         data = self.updateOutput
-        print('update', self.updateOutput)
         # TODO: regex here to determine status and percent
-        m = re.search(r'(\d+)%', self.updateOutput, re.M)
-        if len(m) > 1:
-            percent = int(m[1])
+        m = re.search(r'([\d]+)', self.updateOutput, re.M)
+        if m is not None:
+            percent = int(m.group(1))
         else:
             percent = 0
         status = "Writing SmartDrive Bluetooth Firmware."
