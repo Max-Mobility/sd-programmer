@@ -1,0 +1,77 @@
+Release 1.3.9 (2017-11-30)
+==========================
+* Compatibility improvement
+
+Release 1.3.8 (2016-12-19)
+==========================
+* Stability improvement
+
+Release 1.3.7 (2016-11-28)
+==========================
+* Driver stability improvement
+* Minor improvements
+
+Release 1.3.6 (2015-08-21)
+==========================
+* Fixed execution on Windows 10
+* Changed licence acquisition link
+
+Release 1.3.5 (2014-10-22)
+==========================
+* Preserve thermometer calibration during update
+
+Release 1.3.4 (2014-05-20)
+==========================
+* Fixed window size issue with custom font settings
+
+Release 1.3.3 (2014-04-02)
+==========================
+* Updated device names
+
+Release 1.3.2 (2014-03-27)
+==========================
+* Minor improvements
+
+Release 1.3.1 (2014-03-19)
+==========================
+* Flashing performance improvements
+
+Release 1.3.0 (2014-03-05)
+==========================
+* Support for BLE121LR-A-256
+* Improved device compatibility checking
+
+Release 1.2.2 (2014-02-10)
+==========================
+* Request license key through support site
+
+Release 1.2.0 (2014-02-05)
+==========================
+* Support for BLE113-A-256
+* Improved detection of missing license key
+
+Release 1.1.0 (2013-10-24)
+==========================
+* Windows compatibility improvements
+
+Release 1.0.6 (2013-09-13)
+==========================
+* Fixed a bug which prevented startup if multiple recovery files were found
+
+Release 1.0.4 (2013-03-21)
+==========================
+* Reset device after firmware update in command line interface
+
+Release 1.0.3 (2013-03-11)
+==========================
+* Fixed a bug which terminated the app on startup if previous state file was corrupted
+
+Release 1.0.1 (2013-03-05)
+==========================
+* Prevent updating a firmware, which requires a license key, if the device doesn't have one
+* Check that the device to be updated is compatible with the firmware in question
+* Fixed a bug which prevented updating a firmware, if the firmware file or path contained non-ascii characters
+
+Release 0.11 (2013-01-03)
+=========================
+* Added a command line interface
