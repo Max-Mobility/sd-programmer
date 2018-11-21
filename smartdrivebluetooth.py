@@ -70,14 +70,14 @@ class SmartDriveBluetooth(QObject):
     def onListDataReady(self):
         data = str(self.listProcess.readAllStandardOutput(), 'utf-8')
         self.bleUpdateOutput += data
-        percent, state = self.parseBleUpdateOutput()
+        percent, state = self.parseListOutput()
         self.listStatus.emit(percent, state)
 
     def onListErrorReady(self):
         data = str(self.listProcess.readAllStandardError(), 'utf-8')
         print("STDERR:",data)
         self.bleUpdateOutput += data
-        percent, state = self.parseBleUpdateOutput()
+        percent, state = self.parseListOutput()
         self.listStatus.emit(percent, state)
 
     def onListFinished(self, code, status):
@@ -92,6 +92,19 @@ class SmartDriveBluetooth(QObject):
         self.listProcess = None
         self.isProgramming = False
         self.listFinished.emit()
+
+    def parseListOutput(self):
+        data = self.bleUpdateOutput
+        # TODO: regex here to determine status and percent
+        m = re.split(r'Sector \d: (\.+)', self.bleUpdateOutput, re.M)
+        if len(m) > 1:
+            percent = len(''.join(m[1:-1]).replace('\n','')) / self.totalBleUpdateLength * 100
+        else:
+            percent = 0
+        status = m[0].split('\n')[-1]
+        if len(status) == 0:
+            status = "Writing new firmware."
+        return percent, status
 
     @pyqtSlot()
     def getDeviceInfo(self):
@@ -112,14 +125,14 @@ class SmartDriveBluetooth(QObject):
     def onGetDataReady(self):
         data = str(self.getProcess.readAllStandardOutput(), 'utf-8')
         self.bleUpdateOutput += data
-        percent, state = self.parseBleUpdateOutput()
+        percent, state = self.parseGetOutput()
         self.getStatus.emit(percent, state)
 
     def onGetErrorReady(self):
         data = str(self.getProcess.readAllStandardError(), 'utf-8')
         print("STDERR:",data)
         self.bleUpdateOutput += data
-        percent, state = self.parseBleUpdateOutput()
+        percent, state = self.parseGetOutput()
         self.getStatus.emit(percent, state)
 
     def onGetFinished(self, code, status):
@@ -135,15 +148,21 @@ class SmartDriveBluetooth(QObject):
         self.isProgramming = False
         self.getFinished.emit()
 
+    def parseGetOutput(self):
+        data = self.bleUpdateOutput
+        # TODO: regex here to determine status and percent
+        m = re.split(r'Sector \d: (\.+)', self.bleUpdateOutput, re.M)
+        if len(m) > 1:
+            percent = len(''.join(m[1:-1]).replace('\n','')) / self.totalBleUpdateLength * 100
+        else:
+            percent = 0
+        status = m[0].split('\n')[-1]
+        if len(status) == 0:
+            status = "Writing new firmware."
+        return percent, status
+
     @pyqtSlot()
     def programFirmware(self):
-        connected, errStr = self.debuggerConnected()
-        if not conneccted:
-            self.firmwareFailed.emit(
-                "Couldn't find cc-debugger: {}".format(errStr)
-            )
-            return
-
         self.isProgramming = True
         self.bleUpdateOutput = ''
         self.firmwarePercent = 0
@@ -167,14 +186,14 @@ class SmartDriveBluetooth(QObject):
     def onFirmwareDataReady(self):
         data = str(self.firmwareProcess.readAllStandardOutput(), 'utf-8')
         self.bleUpdateOutput += data
-        percent, state = self.parseBleUpdateOutput()
+        percent, state = self.parseUpdateOutput()
         self.firmwareStatus.emit(percent, state)
 
     def onFirmwareErrorReady(self):
         data = str(self.firmwareProcess.readAllStandardError(), 'utf-8')
         print("STDERR:",data)
         self.bleUpdateOutput += data
-        percent, state = self.parseBleUpdateOutput()
+        percent, state = self.parseUpdateOutput()
         self.firmwareStatus.emit(percent, state)
 
     def onFirmwareFinished(self, code, status):
@@ -190,7 +209,7 @@ class SmartDriveBluetooth(QObject):
         self.isProgramming = False
         self.firmwareFinished.emit()
 
-    def parseBleUpdateOutput(self):
+    def parseUpdateOutput(self):
         data = self.bleUpdateOutput
         # TODO: regex here to determine status and percent
         m = re.split(r'Sector \d: (\.+)', self.bleUpdateOutput, re.M)
