@@ -10,6 +10,7 @@ import resource
 import pages
 from pager import Pager
 from smartdrive import SmartDrive
+from smartdrivebluetooth import SmartDriveBluetooth
 
 from action import\
     Action
@@ -153,9 +154,9 @@ class Programmer(QMainWindow):
 
         self.pager = Pager()
         self.pager.addPage(self.startPage)
+        self.pager.addPage(self.blePage)
         self.pager.addPage(self.bootloaderPage)
         self.pager.addPage(self.firmwarePage)
-        self.pager.addPage(self.blePage)
         self.pager.addPage(self.endPage)
 
         # main controls
@@ -221,8 +222,8 @@ class Programmer(QMainWindow):
         self.firmwarePage.finished.connect(self.pager.onNext)
 
         # ble page
-        self.blePage.begin.connect(self.onStartBle)
         self.smartDriveBluetooth.status.connect(self.blePage.onProgressUpdate)
+        self.smartDriveBluetooth.deviceInfo.connect(self.blePage.onDeviceInfo)
         self.smartDriveBluetooth.firmwareFinished.connect(self.blePage.onFirmwareFinished)
         self.smartDriveBluetooth.failed.connect(self.blePage.onFirmwareFailed)
         self.blePage.start.connect(self.smartDriveBluetooth.start)
@@ -256,10 +257,6 @@ class Programmer(QMainWindow):
             self.port = newPort
 
     # functions for selecting the MX2+ firmware file
-    def onStartBle(self):
-        if self.bleFileName is not None:
-            resource.open(self.bleFileName)
-
     def onInvalidFirmwareFile(self, err):
         QMessageBox.critical(
             self, 'OTA File Error', err.replace('\n', '<br>'),
@@ -282,13 +279,14 @@ class Programmer(QMainWindow):
     def onOpenBLEProject(self):
         fname, _ = QFileDialog.getOpenFileName(
             self,
-            'Select SmartDrive BLE Project File',
+            'Select SmartDrive BLE Firmware File',
             '',
-            'BGPROJ Files (*.bgproj)',
+            'Firmware Files (*.fw)',
             options=QFileDialog.Options()
         )
         if fname is not None and len(fname) > 0:
             self.bleFileName = fname
+            self.smartDriveBluetooth.onFirmwareFileSelected(self.bleFileName)
             self.bleLabel.setText('<b><i>{}</i></b>'.format(self.bleFileName))
 
     # functions for controlling the programming

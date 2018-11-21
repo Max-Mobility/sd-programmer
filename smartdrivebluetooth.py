@@ -13,6 +13,7 @@ class SmartDriveBluetooth(QObject):
     updateError = pyqtSignal(str)
 
     status = pyqtSignal(int, str)
+    deviceInfo = pyqtSignal(str, str, str)
 
     listFinished = pyqtSignal()
     getFinished = pyqtSignal()
@@ -25,6 +26,9 @@ class SmartDriveBluetooth(QObject):
         super().__init__()
         self.isProgramming = False
         self.fwFileName = None
+        self.serial = None
+        self.licenseKey = None
+        self.address = None
 
         if fwFileName is not None:
             self.onFirmwareFileSelected(fwFileName)
@@ -54,7 +58,8 @@ class SmartDriveBluetooth(QObject):
     def start(self):
         '''Determines if there is a valid cc-debugger attached to the system'''
         self.firmwarePercent = 0
-        self.firmwareStatus.emit(0, '')
+        self.status.emit(0, '')
+        self.resetDeviceInfo()
 
         # BleUpdate process
         self.isProgramming = True
@@ -74,45 +79,50 @@ class SmartDriveBluetooth(QObject):
     def onListDataReady(self):
         data = str(self.listProcess.readAllStandardOutput(), 'utf-8')
         self.listOutput += data
-        percent, state = self.parseListOutput()
-        self.listStatus.emit(percent, state)
+        state = self.parseListOutput()
+        self.status.emit(0, state)
 
     def onListErrorReady(self):
         data = str(self.listProcess.readAllStandardError(), 'utf-8')
         print("STDERR:",data)
         self.listOutput += data
-        percent, state = self.parseListOutput()
-        self.listStatus.emit(percent, state)
+        state = self.parseListOutput()
+        self.status.emit(0, state)
 
     def onListFinished(self, code, status):
         if code == 0:
-            self.listStatus.emit(100, 'List complete')
+            self.status.emit(0, 'Found CC-Debugger')
             self.listFinished.emit()
         elif self.isProgramming:
-            self.listStatus.emit(0, 'List failed.')
-            self.failed.emit("List failed: {}: {}".format(code, status))
+            self.status.emit(0, 'Could not find CC-Debugger, check to make sure it is plugged in and drivers are installed.')
+            self.failed.emit("Could not find CC-Debugger: {}: {}".format(code, status))
         else:
-            self.listStatus.emit(0, 'List stopped.')
+            self.listStatus.emit(0, 'Stopped.')
+            self.listFinished.emit()
         self.listProcess = None
         self.isProgramming = False
-        self.listFinished.emit()
 
     def parseListOutput(self):
         data = self.listOutput
         # TODO: regex here to determine status and percent
-        m = re.split(r'Sector \d: (\.+)', self.listOutput, re.M)
-        if len(m) > 1:
-            percent = len(''.join(m[1:-1]).replace('\n','')) / self.totalBleUpdateLength * 100
+        m = re.search(r'CC Debugger', self.listOutput, re.M)
+        if m is not None:
+            return 'Found CC-Debugger'
         else:
-            percent = 0
-        status = m[0].split('\n')[-1]
-        if len(status) == 0:
-            status = "Writing new firmware."
-        return percent, status
+            return 'No CC-Debugger Found'
+
+    def resetDeviceInfo(self):
+        # reset device info
+        self.serial = None
+        self.licenseKey = None
+        self.address = None
+        self.deviceInfo.emit(self.serial, self.licenseKey, self.address)
 
     @pyqtSlot()
     def getDeviceInfo(self):
         '''Gets the MAC Address and License Key from the Device before proramming'''
+        self.resetDeviceInfo()
+
         # BleUpdate process
         self.isProgramming = True
         self.getOutput = ''
@@ -131,46 +141,45 @@ class SmartDriveBluetooth(QObject):
     def onGetDataReady(self):
         data = str(self.getProcess.readAllStandardOutput(), 'utf-8')
         self.getOutput += data
-        percent, state = self.parseGetOutput()
-        self.getStatus.emit(percent, state)
+        state = self.parseGetOutput()
+        self.status.emit(0, state)
 
     def onGetErrorReady(self):
         data = str(self.getProcess.readAllStandardError(), 'utf-8')
         print("STDERR:",data)
         self.getOutput += data
-        percent, state = self.parseGetOutput()
-        self.getStatus.emit(percent, state)
+        state = self.parseGetOutput()
+        self.status.emit(0, state)
 
     def onGetFinished(self, code, status):
         if code == 0:
-            self.getStatus.emit(100, 'Get complete')
+            self.status.emit(0, 'Got Device Info')
             self.getFinished.emit()
         elif self.isProgramming:
-            self.getStatus.emit(0, 'Get failed.')
-            self.failed.emit("Get failed: {}: {}".format(code, status))
+            self.status.emit(0, 'Could not get device info.')
+            self.failed.emit("Could not get device info: {}: {}".format(code, status))
         else:
-            self.getStatus.emit(0, 'Get stopped.')
+            self.status.emit(0, 'Get stopped.')
+            self.getFinished.emit()
         self.getProcess = None
         self.isProgramming = False
-        self.getFinished.emit()
 
     def parseGetOutput(self):
         data = self.getOutput
         # TODO: regex here to determine status and percent
-        m = re.split(r'Sector \d: (\.+)', self.getOutput, re.M)
-        if len(m) > 1:
-            percent = len(''.join(m[1:-1]).replace('\n','')) / self.totalBleUpdateLength * 100
+        if len(data) > 1:
+            self.serial = re.search(r'Serial number\s*:\s*([\d\w]+)', self.getOutput, re.M)[1]
+            self.address = re.search(r'Address\s*:\s*([\d:\w]+)', self.getOutput, re.M)[1]
+            self.licenseKey = re.search(r'License key\s*:\s*([\d\w]+)', self.getOutput, re.M)[1]
+            self.deviceInfo.emit(self.serial, self.licenseKey, self.address)
+            return 'Got device info.'
         else:
-            percent = 0
-        status = m[0].split('\n')[-1]
-        if len(status) == 0:
-            status = "Writing new firmware."
-        return percent, status
+            return 'Could not get device info.'
 
     @pyqtSlot()
     def programFirmware(self):
         self.firmwarePercent = 0
-        self.firmwareStatus.emit(0, '')
+        self.status.emit(0, 'Programming SmartDrive Bluetooth')
 
         # BleUpdate process
         self.isProgramming = True
@@ -192,30 +201,31 @@ class SmartDriveBluetooth(QObject):
         data = str(self.firmwareProcess.readAllStandardOutput(), 'utf-8')
         self.updateOutput += data
         percent, state = self.parseUpdateOutput()
-        self.firmwareStatus.emit(percent, state)
+        self.status.emit(percent, state)
 
     def onFirmwareErrorReady(self):
         data = str(self.firmwareProcess.readAllStandardError(), 'utf-8')
         print("STDERR:",data)
         self.updateOutput += data
         percent, state = self.parseUpdateOutput()
-        self.firmwareStatus.emit(percent, state)
+        self.status.emit(percent, state)
 
     def onFirmwareFinished(self, code, status):
         if code == 0:
-            self.firmwareStatus.emit(100, 'Firmware complete')
+            self.status.emit(100, 'SmartDrive Bluetooth complete')
             self.firmwareFinished.emit()
         elif self.isProgramming:
-            self.firmwareStatus.emit(0, 'Firmware failed.')
-            self.failed.emit("Firmware failed: {}: {}".format(code, status))
+            self.status.emit(0, 'SmartDrive Bluetooth failed.')
+            self.failed.emit("SmartDrive Bluetooth failed: {}: {}".format(code, status))
         else:
-            self.firmwareStatus.emit(0, 'Firmware stopped.')
+            self.status.emit(0, 'Stopped.')
+            self.firmwareFinished.emit()
         self.firmwareProcess = None
         self.isProgramming = False
-        self.firmwareFinished.emit()
 
     def parseUpdateOutput(self):
         data = self.updateOutput
+        print('update', self.updateOutput)
         # TODO: regex here to determine status and percent
         m = re.split(r'Sector \d: (\.+)', self.updateOutput, re.M)
         if len(m) > 1:
@@ -229,5 +239,7 @@ class SmartDriveBluetooth(QObject):
 
     @pyqtSlot()
     def stop(self):
+        self.resetDeviceInfo()
+
         self.isProgramming = False
         self.stopSignal.emit()

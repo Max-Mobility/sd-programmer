@@ -217,38 +217,84 @@ class FirmwarePage(BasePage):
         self.stopButton.hide()
 
 class BLEPage(BasePage):
-    begin = pyqtSignal()
+    start = pyqtSignal()
+    stop = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.nextEnabled = False
 
-        self.pixMap = QtGui.QPixmap(resource.path('images/ble.jpg'))
+        title = QLabel("Programming SmartDrive Bluetooth")
+        self.progressBar = ProgressBar()
+        self.startButton = QPushButton("Start")
+        self.startButton.clicked.connect(self.onStart)
+        self.startButton.show()
+        self.stopButton = QPushButton("Stop")
+        self.stopButton.clicked.connect(self.onStop)
+        self.stopButton.hide()
 
-        title = QLabel("Now program the SmartDrive Bluetooth Firmware.")
-        title.setWordWrap(True)
+        label = QLabel("Will now automatically program SmartDrive Bluetooth.")
+        label.setWordWrap(True)
 
-        bleInstructions = QLabel("The program will open when you press 'Begin'. Press the 'Info' button and ensure it DOES NOT turn RED. Then press the 'Update' button.\nWhen it has finished, press 'Next'")
-        bleInstructions.setWordWrap(True)
+        self.sn = QLabel("S/N: ")
 
-        self.beginButton = QPushButton("Begin")
-        self.beginButton.clicked.connect(self.onBegin)
+        self.lk = QLabel("License: ")
 
-        self.labels = [title, bleInstructions, self.beginButton]
+        self.addr = QLabel("Address: ")
 
-        self.picture = QLabel(self)
-        self.picture.setPixmap(self.pixMap.scaled(self.getPictureSize(), Qt.KeepAspectRatio))
+        self.labels = [title, label, self.sn, self.lk, self.addr,
+                       self.progressBar, self.startButton, self.stopButton]
 
         self.layout.addWidget(title)
-        self.layout.addWidget(bleInstructions)
-        self.layout.addWidget(self.picture)
-        self.layout.addWidget(self.beginButton)
+        self.layout.addWidget(label)
+        self.layout.addWidget(self.sn)
+        self.layout.addWidget(self.lk)
+        self.layout.addWidget(self.addr)
+        self.layout.addWidget(self.progressBar)
+        self.layout.addWidget(self.startButton)
+        self.layout.addWidget(self.stopButton)
 
     @pyqtSlot()
-    def onBegin(self):
-        self.begin.emit()
+    def reset(self):
+        self.onStop()
+        self.progressBar.setProgress(0, '')
+        self.nextEnabled = False
+
+    @pyqtSlot(str)
+    def onFirmwareFailed(self, status):
+        msg = status.replace('\n','<br>')
+        QMessageBox.critical(self, 'SmartDrive Bluetooth Programming Failure',
+                             msg, QMessageBox.Ok, QMessageBox.Ok)
+        self.onStop()
+
+    @pyqtSlot()
+    def onFirmwareFinished(self):
+        self.stopButton.hide()
         self.nextEnabled = True
+        self.progressBar.setProgress(100, 'SmartDrive Bluetooth Programming Complete!')
         super().finished.emit()
+
+    @pyqtSlot(int, str)
+    def onProgressUpdate(self, percent, status):
+        self.progressBar.setProgress(percent, status)
+
+    @pyqtSlot(str, str, str)
+    def onDeviceInfo(self, serialNumber, licenseKey, address):
+        self.sn.setText('S/N: ' + serialNumber)
+        self.lk.setText('License: ' + licenseKey)
+        self.addr.setText('Address: ' + address)
+
+    @pyqtSlot()
+    def onStart(self):
+        self.start.emit()
+        self.startButton.hide()
+        self.stopButton.show()
+
+    @pyqtSlot()
+    def onStop(self):
+        self.stop.emit()
+        self.startButton.show()
+        self.stopButton.hide()
 
 class EndPage(BasePage):
     def __init__(self, parent=None):
