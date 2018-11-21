@@ -51,7 +51,8 @@ class Programmer(QMainWindow):
         super().__init__()
 
         self.port = None
-        self.thread = None
+        self.sdthread = None
+        self.sdbtthread = None
         self.smartDrive = None
         self.fwFileName = None
         self.bleFileName = None
@@ -185,16 +186,25 @@ class Programmer(QMainWindow):
 
     def initSD(self):
         # manage the smartdrive thread
-        self.thread = QThread()
+        self.sdthread = QThread()
         # create the smartdrive
         self.smartDrive = SmartDrive(self.port)
         # move the smartdrive to the thread
-        self.smartDrive.moveToThread(self.thread)
+        self.smartDrive.moveToThread(self.sdthread)
+
+        # manage the smartdrive bluetooth thread
+        self.sdbtthread = QThread()
+        # create the smartdrive bluetooth
+        self.smartDriveBluetooth = SmartDriveBluetooth()
+        # move the smartdrive to the thread
+        self.smartDriveBluetooth.moveToThread(self.sdbtthread)
+
         # wire up all the events
         self.port_selector.currentIndexChanged[str].connect(self.smartDrive.onPortSelected)
 
         self.smartDrive.invalidFirmware.connect(self.onInvalidFirmwareFile)
 
+        # bootloader page
         self.smartDrive.bootloaderStatus.connect(self.bootloaderPage.onProgressUpdate)
         self.smartDrive.bootloaderFailed.connect(self.bootloaderPage.onBootloaderFailed)
         self.smartDrive.bootloaderFinished.connect(self.bootloaderPage.onBootloaderFinished)
@@ -202,8 +212,7 @@ class Programmer(QMainWindow):
         self.bootloaderPage.stop.connect(self.smartDrive.stop)
         self.bootloaderPage.finished.connect(self.pager.onNext)
 
-        self.blePage.begin.connect(self.onStartBle)
-
+        # smartdrive page
         self.smartDrive.firmwareStatus.connect(self.firmwarePage.onProgressUpdate)
         self.smartDrive.firmwareFinished.connect(self.firmwarePage.onFirmwareFinished)
         self.smartDrive.firmwareFailed.connect(self.firmwarePage.onFirmwareFailed)
@@ -211,10 +220,22 @@ class Programmer(QMainWindow):
         self.firmwarePage.stop.connect(self.smartDrive.stop)
         self.firmwarePage.finished.connect(self.pager.onNext)
 
+        # ble page
+        self.blePage.begin.connect(self.onStartBle)
+        self.smartDriveBluetooth.status.connect(self.blePage.onProgressUpdate)
+        self.smartDriveBluetooth.firmwareFinished.connect(self.blePage.onFirmwareFinished)
+        self.smartDriveBluetooth.failed.connect(self.blePage.onFirmwareFailed)
+        self.blePage.start.connect(self.smartDriveBluetooth.start)
+        self.blePage.stop.connect(self.smartDriveBluetooth.stop)
+        self.blePage.finished.connect(self.pager.onNext)
+
         self.endPage.finished.connect(self.bootloaderPage.reset)
         self.endPage.finished.connect(self.firmwarePage.reset)
-        # start the thread
-        self.thread.start()
+        self.endPage.finished.connect(self.blePage.reset)
+        # start the SD thread
+        self.sdthread.start()
+        # start the SDBT thread
+        self.sdbtthread.start()
 
     # Functions for serial port control
     def refreshPorts(self):
@@ -273,8 +294,11 @@ class Programmer(QMainWindow):
     # functions for controlling the programming
     def stop(self):
         self.smartDrive.stop()
-        self.thread.quit()
-        self.thread.wait()
+        self.sdthread.quit()
+        self.sdthread.wait()
+        self.smartDriveBluetooth.stop()
+        self.sdbtthread.quit()
+        self.sdbtthread.wait()
 
     # general functions
     def about(self):

@@ -12,18 +12,13 @@ class SmartDriveBluetooth(QObject):
     getError = pyqtSignal(str)
     updateError = pyqtSignal(str)
 
-    listStatus = pyqtSignal(int, str)
+    status = pyqtSignal(int, str)
+
     listFinished = pyqtSignal()
-    listFailed = pyqtSignal(str)
-
-    getStatus = pyqtSignal(int, str)
     getFinished = pyqtSignal()
-    getFailed = pyqtSignal(str)
-
-    firmwareStatus = pyqtSignal(int, str)
     firmwareFinished = pyqtSignal()
-    firmwareFailed = pyqtSignal(str)
 
+    failed = pyqtSignal(str)
     stopSignal = pyqtSignal()
 
     def __init__(self, fwFileName=None):
@@ -41,6 +36,10 @@ class SmartDriveBluetooth(QObject):
         self.getProcess = None
         self.firmwareProcess = None
 
+        
+        self.listFinished.connect(self.getDeviceInfo)
+        self.getFinished.connect(self.programFirmware)
+
     @pyqtSlot(str)
     def onFirmwareFileSelected(self, fwFileName):
         self.fw = None
@@ -52,9 +51,14 @@ class SmartDriveBluetooth(QObject):
         self.fwFileName = fwFileName
 
     @pyqtSlot()
-    def debuggerConnected(self):
-        '''Returns true if we have a valid cc-debugger connected, false otherwise'''
+    def start(self):
+        '''Determines if there is a valid cc-debugger attached to the system'''
+        self.firmwarePercent = 0
+        self.firmwareStatus.emit(0, '')
+
         # BleUpdate process
+        self.isProgramming = True
+        self.listOutput = ''
         self.listProcess = QProcess()
         self.listProcess.readyReadStandardOutput.connect(self.onListDataReady)
         self.listProcess.readyReadStandardError.connect(self.onListErrorReady)
@@ -69,14 +73,14 @@ class SmartDriveBluetooth(QObject):
 
     def onListDataReady(self):
         data = str(self.listProcess.readAllStandardOutput(), 'utf-8')
-        self.bleUpdateOutput += data
+        self.listOutput += data
         percent, state = self.parseListOutput()
         self.listStatus.emit(percent, state)
 
     def onListErrorReady(self):
         data = str(self.listProcess.readAllStandardError(), 'utf-8')
         print("STDERR:",data)
-        self.bleUpdateOutput += data
+        self.listOutput += data
         percent, state = self.parseListOutput()
         self.listStatus.emit(percent, state)
 
@@ -86,7 +90,7 @@ class SmartDriveBluetooth(QObject):
             self.listFinished.emit()
         elif self.isProgramming:
             self.listStatus.emit(0, 'List failed.')
-            self.listFailed.emit("List failed: {}: {}".format(code, status))
+            self.failed.emit("List failed: {}: {}".format(code, status))
         else:
             self.listStatus.emit(0, 'List stopped.')
         self.listProcess = None
@@ -94,9 +98,9 @@ class SmartDriveBluetooth(QObject):
         self.listFinished.emit()
 
     def parseListOutput(self):
-        data = self.bleUpdateOutput
+        data = self.listOutput
         # TODO: regex here to determine status and percent
-        m = re.split(r'Sector \d: (\.+)', self.bleUpdateOutput, re.M)
+        m = re.split(r'Sector \d: (\.+)', self.listOutput, re.M)
         if len(m) > 1:
             percent = len(''.join(m[1:-1]).replace('\n','')) / self.totalBleUpdateLength * 100
         else:
@@ -110,6 +114,8 @@ class SmartDriveBluetooth(QObject):
     def getDeviceInfo(self):
         '''Gets the MAC Address and License Key from the Device before proramming'''
         # BleUpdate process
+        self.isProgramming = True
+        self.getOutput = ''
         self.getProcess = QProcess()
         self.getProcess.readyReadStandardOutput.connect(self.onGetDataReady)
         self.getProcess.readyReadStandardError.connect(self.onGetErrorReady)
@@ -124,14 +130,14 @@ class SmartDriveBluetooth(QObject):
 
     def onGetDataReady(self):
         data = str(self.getProcess.readAllStandardOutput(), 'utf-8')
-        self.bleUpdateOutput += data
+        self.getOutput += data
         percent, state = self.parseGetOutput()
         self.getStatus.emit(percent, state)
 
     def onGetErrorReady(self):
         data = str(self.getProcess.readAllStandardError(), 'utf-8')
         print("STDERR:",data)
-        self.bleUpdateOutput += data
+        self.getOutput += data
         percent, state = self.parseGetOutput()
         self.getStatus.emit(percent, state)
 
@@ -141,7 +147,7 @@ class SmartDriveBluetooth(QObject):
             self.getFinished.emit()
         elif self.isProgramming:
             self.getStatus.emit(0, 'Get failed.')
-            self.getFailed.emit("Get failed: {}: {}".format(code, status))
+            self.failed.emit("Get failed: {}: {}".format(code, status))
         else:
             self.getStatus.emit(0, 'Get stopped.')
         self.getProcess = None
@@ -149,9 +155,9 @@ class SmartDriveBluetooth(QObject):
         self.getFinished.emit()
 
     def parseGetOutput(self):
-        data = self.bleUpdateOutput
+        data = self.getOutput
         # TODO: regex here to determine status and percent
-        m = re.split(r'Sector \d: (\.+)', self.bleUpdateOutput, re.M)
+        m = re.split(r'Sector \d: (\.+)', self.getOutput, re.M)
         if len(m) > 1:
             percent = len(''.join(m[1:-1]).replace('\n','')) / self.totalBleUpdateLength * 100
         else:
@@ -163,13 +169,12 @@ class SmartDriveBluetooth(QObject):
 
     @pyqtSlot()
     def programFirmware(self):
-        self.isProgramming = True
-        self.bleUpdateOutput = ''
         self.firmwarePercent = 0
-        self.firmwareState = ''
         self.firmwareStatus.emit(0, '')
 
         # BleUpdate process
+        self.isProgramming = True
+        self.updateOutput = ''
         self.firmwareProcess = QProcess()
         self.firmwareProcess.readyReadStandardOutput.connect(self.onFirmwareDataReady)
         self.firmwareProcess.readyReadStandardError.connect(self.onFirmwareErrorReady)
@@ -185,14 +190,14 @@ class SmartDriveBluetooth(QObject):
 
     def onFirmwareDataReady(self):
         data = str(self.firmwareProcess.readAllStandardOutput(), 'utf-8')
-        self.bleUpdateOutput += data
+        self.updateOutput += data
         percent, state = self.parseUpdateOutput()
         self.firmwareStatus.emit(percent, state)
 
     def onFirmwareErrorReady(self):
         data = str(self.firmwareProcess.readAllStandardError(), 'utf-8')
         print("STDERR:",data)
-        self.bleUpdateOutput += data
+        self.updateOutput += data
         percent, state = self.parseUpdateOutput()
         self.firmwareStatus.emit(percent, state)
 
@@ -202,7 +207,7 @@ class SmartDriveBluetooth(QObject):
             self.firmwareFinished.emit()
         elif self.isProgramming:
             self.firmwareStatus.emit(0, 'Firmware failed.')
-            self.firmwareFailed.emit("Firmware failed: {}: {}".format(code, status))
+            self.failed.emit("Firmware failed: {}: {}".format(code, status))
         else:
             self.firmwareStatus.emit(0, 'Firmware stopped.')
         self.firmwareProcess = None
@@ -210,9 +215,9 @@ class SmartDriveBluetooth(QObject):
         self.firmwareFinished.emit()
 
     def parseUpdateOutput(self):
-        data = self.bleUpdateOutput
+        data = self.updateOutput
         # TODO: regex here to determine status and percent
-        m = re.split(r'Sector \d: (\.+)', self.bleUpdateOutput, re.M)
+        m = re.split(r'Sector \d: (\.+)', self.updateOutput, re.M)
         if len(m) > 1:
             percent = len(''.join(m[1:-1]).replace('\n','')) / self.totalBleUpdateLength * 100
         else:
