@@ -12,6 +12,7 @@ class ProgressBar(QWidget):
         self.bar.setGeometry(0,0, 100, 10)
 
         self.label = QLabel()
+        self.label.setWordWrap(True)
 
         lay.addWidget(self.bar)
         lay.addWidget(self.label)

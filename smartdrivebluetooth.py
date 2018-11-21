@@ -79,37 +79,37 @@ class SmartDriveBluetooth(QObject):
     def onListDataReady(self):
         data = str(self.listProcess.readAllStandardOutput(), 'utf-8')
         self.listOutput += data
-        state = self.parseListOutput()
+        found, state = self.parseListOutput()
         self.status.emit(0, state)
 
     def onListErrorReady(self):
         data = str(self.listProcess.readAllStandardError(), 'utf-8')
         print("STDERR:",data)
         self.listOutput += data
-        state = self.parseListOutput()
+        found, state = self.parseListOutput()
         self.status.emit(0, state)
 
     def onListFinished(self, code, status):
-        if code == 0:
+        found, state = self.parseListOutput()
+        if code == 0 and found:
             self.status.emit(0, 'Found CC-Debugger')
             self.listFinished.emit()
         elif self.isProgramming:
             self.status.emit(0, 'Could not find CC-Debugger, check to make sure it is plugged in and drivers are installed.')
-            self.failed.emit("Could not find CC-Debugger: {}: {}".format(code, status))
+            self.failed.emit("Could not find CC-Debugger.")
         else:
             self.listStatus.emit(0, 'Stopped.')
             self.listFinished.emit()
         self.listProcess = None
-        self.isProgramming = False
 
     def parseListOutput(self):
         data = self.listOutput
         # TODO: regex here to determine status and percent
         m = re.search(r'CC Debugger', self.listOutput, re.M)
         if m is not None:
-            return 'Found CC-Debugger'
+            return True, 'Found CC-Debugger'
         else:
-            return 'No CC-Debugger Found'
+            return False, 'No CC-Debugger Found'
 
     def resetDeviceInfo(self):
         # reset device info
@@ -141,40 +141,45 @@ class SmartDriveBluetooth(QObject):
     def onGetDataReady(self):
         data = str(self.getProcess.readAllStandardOutput(), 'utf-8')
         self.getOutput += data
-        state = self.parseGetOutput()
+        gotData, state = self.parseGetOutput()
         self.status.emit(0, state)
 
     def onGetErrorReady(self):
         data = str(self.getProcess.readAllStandardError(), 'utf-8')
         print("STDERR:",data)
         self.getOutput += data
-        state = self.parseGetOutput()
+        gotData, state = self.parseGetOutput()
         self.status.emit(0, state)
 
     def onGetFinished(self, code, status):
-        if code == 0:
+        gotData, state = self.parseGetOutput()
+        if code == 0 and gotData:
             self.status.emit(0, 'Got Device Info')
             self.getFinished.emit()
         elif self.isProgramming:
-            self.status.emit(0, 'Could not get device info.')
-            self.failed.emit("Could not get device info: {}: {}".format(code, status))
+            self.status.emit(0, 'Could not get dvice info:\n' + state + '\nMake sure SmartDrive is on and the CC-Debugger light is GREEN')
+            self.failed.emit("Could not get device info")
         else:
             self.status.emit(0, 'Get stopped.')
-            self.getFinished.emit()
         self.getProcess = None
-        self.isProgramming = False
 
     def parseGetOutput(self):
         data = self.getOutput
         # TODO: regex here to determine status and percent
         if len(data) > 1:
-            self.serial = re.search(r'Serial number\s*:\s*([\d\w]+)', self.getOutput, re.M)[1]
-            self.address = re.search(r'Address\s*:\s*([\d:\w]+)', self.getOutput, re.M)[1]
-            self.licenseKey = re.search(r'License key\s*:\s*([\d\w]+)', self.getOutput, re.M)[1]
-            self.deviceInfo.emit(self.serial, self.licenseKey, self.address)
-            return 'Got device info.'
-        else:
-            return 'Could not get device info.'
+            error = re.search(r'error', self.getOutput, re.M)
+            if error is not None:
+                return False, self.getOutput
+            s = re.search(r'Serial number\s*:\s*([\d\w]+)', self.getOutput, re.M)
+            a = re.search(r'Address\s*:\s*([\d:\w]+)', self.getOutput, re.M)
+            l = re.search(r'License key\s*:\s*([\d\w]+)', self.getOutput, re.M)
+            if a is not None and l is not None and s is not None:
+                self.serial = s[1]
+                self.address = a[1]
+                self.licenseKey = l[1]
+                self.deviceInfo.emit(self.serial, self.licenseKey, self.address)
+                return True, 'Got device info.'
+        return False, 'Could not get device info.'
 
     @pyqtSlot()
     def programFirmware(self):
