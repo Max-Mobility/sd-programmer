@@ -227,14 +227,12 @@ class SmartDriveBluetooth(QObject):
         data = self.updateOutput
         print('update', self.updateOutput)
         # TODO: regex here to determine status and percent
-        m = re.split(r'Sector \d: (\.+)', self.updateOutput, re.M)
+        m = re.search(r'(\d+)%', self.updateOutput, re.M)
         if len(m) > 1:
-            percent = len(''.join(m[1:-1]).replace('\n','')) / self.totalBleUpdateLength * 100
+            percent = int(m[1])
         else:
             percent = 0
-        status = m[0].split('\n')[-1]
-        if len(status) == 0:
-            status = "Writing new firmware."
+        status = "Writing SmartDrive Bluetooth Firmware."
         return percent, status
 
     @pyqtSlot()
