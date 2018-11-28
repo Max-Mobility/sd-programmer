@@ -6,7 +6,7 @@ from PyQt5.QtCore import QObject, QProcess, pyqtSignal, pyqtSlot
 
 import resource
 
-exePath = 'exes/BleUpdate-1.3.8/bleupdate-cli.exe'
+exePath = 'C:/Bluegiga/BleUpdate/bleupdate-cli.exe'
 
 class SmartDriveBluetooth(QObject):
     invalidFirmware = pyqtSignal(str)
