@@ -6,6 +6,8 @@ from PyQt5.QtCore import QObject, QProcess, pyqtSignal, pyqtSlot
 
 import resource
 
+exePath = 'exes/BleUpdate-1.3.8/bleupdate-cli.exe'
+
 class SmartDriveBluetooth(QObject):
     invalidFirmware = pyqtSignal(str)
     listError = pyqtSignal(str)
@@ -70,7 +72,7 @@ class SmartDriveBluetooth(QObject):
         self.listProcess.finished.connect(self.onListFinished)
         self.stopSignal.connect(self.listProcess.kill)
 
-        program = resource.path('exes/BleUpdate-1.3.9/bleupdate-cli.exe')
+        program = resource.path(exePath)
         args = [
             "list"
         ]
@@ -132,7 +134,7 @@ class SmartDriveBluetooth(QObject):
         self.getProcess.finished.connect(self.onGetFinished)
         self.stopSignal.connect(self.getProcess.kill)
 
-        program = resource.path('exes/BleUpdate-1.3.9/bleupdate-cli.exe')
+        program = resource.path(exePath)
         args = [
             "get"
         ]
@@ -195,7 +197,7 @@ class SmartDriveBluetooth(QObject):
         self.firmwareProcess.finished.connect(self.onFirmwareFinished)
         self.stopSignal.connect(self.firmwareProcess.kill)
 
-        program = resource.path('exes/BleUpdate-1.3.9/bleupdate-cli.exe')
+        program = resource.path(exePath)
         args = [
             "update",
             resource.path(self.fwFileName),

@@ -111,6 +111,10 @@ class BootloaderPage(BasePage):
         self.layout.addWidget(self.stopButton)
 
     @pyqtSlot()
+    def onEnter(self):
+        self.onStart()
+
+    @pyqtSlot()
     def reset(self):
         self.onStop()
         self.progressBar.setProgress(0, '')
@@ -179,6 +183,10 @@ class FirmwarePage(BasePage):
         self.layout.addWidget(self.progressBar)
         self.layout.addWidget(self.startButton)
         self.layout.addWidget(self.stopButton)
+
+    @pyqtSlot()
+    def onEnter(self):
+        self.onStart()
 
     @pyqtSlot()
     def reset(self):
@@ -253,6 +261,10 @@ class BLEPage(BasePage):
         self.layout.addWidget(self.progressBar)
         self.layout.addWidget(self.startButton)
         self.layout.addWidget(self.stopButton)
+
+    @pyqtSlot()
+    def onEnter(self):
+        self.onStart()
 
     @pyqtSlot()
     def reset(self):

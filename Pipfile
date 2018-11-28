@@ -8,7 +8,6 @@ name = "pypi"
 [packages]
 argparse = "*"
 pyserial = "*"
-tqdm = "*"
 pyqt5 = "*"
 
 [requires]

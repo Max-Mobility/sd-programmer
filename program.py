@@ -7,8 +7,6 @@ import os
 import argparse
 # for spawning lpc21isp process
 from multiprocessing import Process, Queue
-# for progress bar:
-from tqdm import tqdm
 
 from ui import Programmer
 from PyQt5.QtWidgets import QApplication
