@@ -74,10 +74,11 @@ class SmartDriveBluetooth(QObject):
         self.fwFileName = fwFileName
 
     def processError(self, error):
+        global exePath
         self.failed.emit('Could not execute ' + exePath + ' - ' + processErrorToString(error))
         if error == 0:
             fname, _ = QFileDialog.getOpenFileName(
-                self,
+                None,
                 'Select SmartDrive BLE Update CLI Executable',
                 'C:\Bluegiga\BleUpdate',
                 'bleupdate-cli.exe (bleupdate-cli.exe)',
