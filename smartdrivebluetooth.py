@@ -3,10 +3,27 @@ import time
 import serial
 import sys
 from PyQt5.QtCore import QObject, QProcess, pyqtSignal, pyqtSlot
+from PyQt5.QtWidgets import QFileDialog
 
 import resource
 
-exePath = 'C:/Bluegiga/BleUpdate/bleupdate-cli.exe'
+import os
+exe = '/Bluegiga/BleUpdate/bleupdate-cli.exe'
+exePath = os.environ['SYSTEMDRIVE'] + exe
+
+def processErrorToString(e):
+    if e == 0:
+        return 'The process failed to start. Either the invoked program is missing, or you may have insufficient permissions to invoke the program.'
+    elif e == 1:
+        return 'The process crashed some time after starting successfully.'
+    elif e == 2:
+        return 'The last waitFor...() function timed out. The state of QProcess is unchanged, and you can try calling waitFor...() again.'
+    elif e == 3:
+        return 'An error occurred when attempting to read from the process. For example, the process may not be running.'
+    elif e == 4:
+        return 'An error occurred when attempting to write to the process. For example, the process may not be running, or it may have closed its input channel.'
+    elif e == 5:
+        return 'An unknown error occurred. This is the default return value of error().'
 
 class SmartDriveBluetooth(QObject):
     invalidFirmware = pyqtSignal(str)
@@ -56,6 +73,19 @@ class SmartDriveBluetooth(QObject):
             return
         self.fwFileName = fwFileName
 
+    def processError(self, error):
+        self.failed.emit('Could not execute ' + exePath + ' - ' + processErrorToString(error))
+        if error == 0:
+            fname, _ = QFileDialog.getOpenFileName(
+                self,
+                'Select SmartDrive BLE Update CLI Executable',
+                'C:\Bluegiga\BleUpdate',
+                'bleupdate-cli.exe (bleupdate-cli.exe)',
+                options=QFileDialog.Options()
+            )
+            if fname is not None and len(fname) > 0:
+                exePath = fname
+
     @pyqtSlot()
     def start(self):
         '''Determines if there is a valid cc-debugger attached to the system'''
@@ -67,6 +97,7 @@ class SmartDriveBluetooth(QObject):
         self.isProgramming = True
         self.listOutput = ''
         self.listProcess = QProcess()
+        self.listProcess.errorOccurred.connect(self.processError)
         self.listProcess.readyReadStandardOutput.connect(self.onListDataReady)
         self.listProcess.readyReadStandardError.connect(self.onListErrorReady)
         self.listProcess.finished.connect(self.onListFinished)
@@ -129,6 +160,7 @@ class SmartDriveBluetooth(QObject):
         self.isProgramming = True
         self.getOutput = ''
         self.getProcess = QProcess()
+        self.getProcess.errorOccurred.connect(self.processError)
         self.getProcess.readyReadStandardOutput.connect(self.onGetDataReady)
         self.getProcess.readyReadStandardError.connect(self.onGetErrorReady)
         self.getProcess.finished.connect(self.onGetFinished)
@@ -192,6 +224,7 @@ class SmartDriveBluetooth(QObject):
         self.isProgramming = True
         self.updateOutput = ''
         self.firmwareProcess = QProcess()
+        self.firmwareProcess.errorOccurred.connect(self.processError)
         self.firmwareProcess.readyReadStandardOutput.connect(self.onFirmwareDataReady)
         self.firmwareProcess.readyReadStandardError.connect(self.onFirmwareErrorReady)
         self.firmwareProcess.finished.connect(self.onFirmwareFinished)

@@ -7,6 +7,20 @@ from PyQt5.QtCore import QObject, QProcess, pyqtSignal, pyqtSlot
 import resource
 from packet import Packet
 
+def processErrorToString(e):
+    if e == 0:
+        return 'The process failed to start. Either the invoked program is missing, or you may have insufficient permissions to invoke the program.'
+    elif e == 1:
+        return 'The process crashed some time after starting successfully.'
+    elif e == 2:
+        return 'The last waitFor...() function timed out. The state of QProcess is unchanged, and you can try calling waitFor...() again.'
+    elif e == 3:
+        return 'An error occurred when attempting to read from the process. For example, the process may not be running.'
+    elif e == 4:
+        return 'An error occurred when attempting to write to the process. For example, the process may not be running, or it may have closed its input channel.'
+    elif e == 5:
+        return 'An unknown error occurred. This is the default return value of error().'
+
 class SmartDrive(QObject):
     totalLPC21ISPLength = 574
 
@@ -104,6 +118,9 @@ class SmartDrive(QObject):
             port.close()
         return True, None
 
+    def processError(self, error):
+        self.failed.emit('Could not execute ' + exePath + ' - ' + processErrorToString(error))
+
     @pyqtSlot()
     def programBootloader(self):
         goodPort, portErr = self.checkPort()
@@ -121,6 +138,7 @@ class SmartDrive(QObject):
 
         # lpc21isp process
         self.bootloaderProcess = QProcess()
+        self.bootloaderProcess.errorOccurred.connect(self.processError)
         self.bootloaderProcess.readyReadStandardOutput.connect(self.onBootloaderDataReady)
         self.bootloaderProcess.readyReadStandardError.connect(self.onBootloaderErrorReady)
         self.bootloaderProcess.finished.connect(self.onLPC21ISPFinished)
