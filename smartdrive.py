@@ -118,8 +118,8 @@ class SmartDrive(QObject):
             port.close()
         return True, None
 
-    def processError(self, error):
-        self.failed.emit('Could not execute ' + exePath + ' - ' + processErrorToString(error))
+    def processBootloaderError(self, error):
+        self.bootloaderFailed.emit(processErrorToString(error))
 
     @pyqtSlot()
     def programBootloader(self):
@@ -138,7 +138,7 @@ class SmartDrive(QObject):
 
         # lpc21isp process
         self.bootloaderProcess = QProcess()
-        self.bootloaderProcess.errorOccurred.connect(self.processError)
+        self.bootloaderProcess.errorOccurred.connect(self.processBootloaderError)
         self.bootloaderProcess.readyReadStandardOutput.connect(self.onBootloaderDataReady)
         self.bootloaderProcess.readyReadStandardError.connect(self.onBootloaderErrorReady)
         self.bootloaderProcess.finished.connect(self.onLPC21ISPFinished)
@@ -154,6 +154,8 @@ class SmartDrive(QObject):
             "38400",  # baudrate
             "12000"   # crystal frequency on board
         ]
+        if sys.platform.startswith('win'):
+            args[2] = "\\\\.\\" + self.portName
         self.bootloaderProcess.start(program, args)
 
     def onBootloaderDataReady(self):
@@ -197,6 +199,8 @@ class SmartDrive(QObject):
     @pyqtSlot()
     def stop(self):
         self.isProgramming = False
+        if self.bootloaderProcess:
+            self.bootloaderProcess.errorOccurred.disconnect(self.processBootloaderError)
         self.stopSignal.emit()
 
     @pyqtSlot()
